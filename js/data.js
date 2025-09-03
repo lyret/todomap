@@ -40,7 +40,7 @@ async function getLocationById(id) {
             id,
             name,
             coordinates,
-            maintenance_info:maintenanceInfo,
+            maintenance_info:maintenance_info,
             tasks (
                 id,
                 title,
@@ -114,4 +114,50 @@ async function toggleTaskCompletion(locationId, taskId) {
 	}
 
 	return true;
+}
+
+// Function to parse text area content into array of strings
+function parseTextareaLines(text) {
+	return text
+		.split("\n")
+		.map((line) => line.trim())
+		.filter((line) => line.length > 0);
+}
+
+// Function to add a new location
+async function addLocation(locationData) {
+	// Format the maintenance info
+	const maintenanceInfo = {
+		description: locationData.description,
+		care: parseTextareaLines(locationData.care),
+		seasonalTasks: {
+			spring: parseTextareaLines(locationData.seasonalTasks.spring),
+			summer: parseTextareaLines(locationData.seasonalTasks.summer),
+			fall: parseTextareaLines(locationData.seasonalTasks.fall),
+			winter: parseTextareaLines(locationData.seasonalTasks.winter),
+		},
+	};
+
+	// Insert the new location
+	const { data, error } = await supabase
+		.from("locations")
+		.insert([
+			{
+				name: locationData.name,
+				coordinates: locationData.coordinates,
+				maintenance_info: maintenanceInfo,
+			},
+		])
+		.select()
+		.single();
+
+	if (error) {
+		console.error("Error adding location:", error);
+		return null;
+	}
+
+	return {
+		...data,
+		maintenanceInfo: data.maintenance_info,
+	};
 }

@@ -17,6 +17,12 @@
 	</head>
 	<body>
 		<div class="container">
+			<!-- Add Location Button -->
+			<button id="add-location-btn" class="floating-button">
+				<span class="plus-icon">+</span>
+				Add Location
+			</button>
+
 			<!-- Map container -->
 			<div id="map"></div>
 
@@ -44,6 +50,68 @@
 						</div>
 					</div>
 				</div>
+			</div>
+		</div>
+
+		<!-- Add Location Sheet -->
+		<div id="location-sheet" class="location-sheet hidden">
+			<div class="sheet-header">
+				<h2>Add New Location</h2>
+				<button id="close-location-sheet" class="close-button">&times;</button>
+			</div>
+			<div class="sheet-content">
+				<form id="add-location-form">
+					<div class="form-group">
+						<label for="location-name">Location Name</label>
+						<input type="text" id="location-name" required />
+					</div>
+
+					<div class="form-group">
+						<label>Coordinates</label>
+						<div class="coordinates-display">
+							<span id="selected-coordinates">Click on the map to set location</span>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label for="location-description">Description</label>
+						<textarea id="location-description" required></textarea>
+					</div>
+
+					<div class="form-group">
+						<label for="care-instructions">Care Instructions</label>
+						<textarea id="care-instructions" placeholder="Enter each instruction on a new line" required></textarea>
+					</div>
+
+					<div class="seasonal-tasks">
+						<h3>Seasonal Tasks</h3>
+
+						<div class="season-group">
+							<label for="spring-tasks">Spring</label>
+							<textarea id="spring-tasks" placeholder="Enter each task on a new line"></textarea>
+						</div>
+
+						<div class="season-group">
+							<label for="summer-tasks">Summer</label>
+							<textarea id="summer-tasks" placeholder="Enter each task on a new line"></textarea>
+						</div>
+
+						<div class="season-group">
+							<label for="fall-tasks">Fall</label>
+							<textarea id="fall-tasks" placeholder="Enter each task on a new line"></textarea>
+						</div>
+
+						<div class="season-group">
+							<label for="winter-tasks">Winter</label>
+							<textarea id="winter-tasks" placeholder="Enter each task on a new line"></textarea>
+						</div>
+					</div>
+
+					<div class="form-actions">
+						<button type="submit" class="button">Save Location</button>
+						<button type="button" class="button button-secondary" id="cancel-location">Cancel</button>
+					</div>
+				</form>
 			</div>
 		</div>
 

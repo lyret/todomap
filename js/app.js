@@ -11,6 +11,7 @@ let map = new maplibregl.Map({
 // Global variables
 let currentLocationId = null;
 const markers = new Map(); // To store markers for easy access
+let selectedCoordinates = null; // To store coordinates for new location
 
 // Initialize map and add markers
 function initializeMap() {
@@ -167,6 +168,85 @@ async function handleNewTaskSubmission(event) {
 	}
 }
 
+// Add new location handling
+function showLocationSheet() {
+	const sheet = document.getElementById("location-sheet");
+	sheet.style.display = "block";
+	sheet.offsetHeight; // Force reflow
+	sheet.classList.remove("hidden");
+
+	// Enable location picking mode
+	map.getCanvas().style.cursor = "crosshair";
+}
+
+function hideLocationSheet() {
+	const sheet = document.getElementById("location-sheet");
+	sheet.classList.add("hidden");
+	sheet.addEventListener(
+		"transitionend",
+		() => {
+			if (sheet.classList.contains("hidden")) {
+				sheet.style.display = "none";
+			}
+		},
+		{ once: true },
+	);
+
+	// Disable location picking mode
+	map.getCanvas().style.cursor = "";
+	selectedCoordinates = null;
+	document.getElementById("selected-coordinates").textContent = "Click on the map to set location";
+}
+
+async function handleLocationSubmit(event) {
+	event.preventDefault();
+
+	if (!selectedCoordinates) {
+		alert("Please select a location on the map first");
+		return;
+	}
+
+	const locationData = {
+		name: document.getElementById("location-name").value,
+		coordinates: selectedCoordinates,
+		description: document.getElementById("location-description").value,
+		care: document.getElementById("care-instructions").value,
+		seasonalTasks: {
+			spring: document.getElementById("spring-tasks").value,
+			summer: document.getElementById("summer-tasks").value,
+			fall: document.getElementById("fall-tasks").value,
+			winter: document.getElementById("winter-tasks").value,
+		},
+	};
+
+	const newLocation = await addLocation(locationData);
+
+	if (newLocation) {
+		// Add marker for new location
+		const el = document.createElement("div");
+		el.className = "marker";
+
+		const marker = new maplibregl.Marker({
+			element: el,
+			clickTolerance: 3,
+			draggable: false,
+		})
+			.setLngLat(newLocation.coordinates)
+			.addTo(map);
+
+		markers.set(newLocation.id, marker);
+
+		marker.getElement().addEventListener("click", (e) => {
+			e.stopPropagation();
+			showLocationDetails(newLocation.id);
+		});
+
+		// Reset form and hide sheet
+		event.target.reset();
+		hideLocationSheet();
+	}
+}
+
 // Event listeners
 document.addEventListener("DOMContentLoaded", async () => {
 	try {
@@ -200,6 +280,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 	} catch (error) {
 		console.error("Error initializing application:", error);
 	}
+
+	// Add location sheet event listeners
+	document.getElementById("add-location-btn").addEventListener("click", showLocationSheet);
+	document.getElementById("close-location-sheet").addEventListener("click", hideLocationSheet);
+	document.getElementById("cancel-location").addEventListener("click", hideLocationSheet);
+	document.getElementById("add-location-form").addEventListener("submit", handleLocationSubmit);
+
+	// Add map click handler for location selection
+	map.on("click", (e) => {
+		if (!document.getElementById("location-sheet").classList.contains("hidden")) {
+			selectedCoordinates = [e.lngLat.lng, e.lngLat.lat];
+			document.getElementById("selected-coordinates").textContent = `[${selectedCoordinates[0].toFixed(6)}, ${selectedCoordinates[1].toFixed(6)}]`;
+		}
+	});
 });
 
 // Add map load event listener
