@@ -1,0 +1,181 @@
+/* Global styles */
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.container {
+	display: flex;
+	width: 100%;
+	height: 100vh;
+}
+
+/* Map styles */
+#map {
+	flex: 1;
+	height: 100vh;
+}
+
+/* Sidebar styles */
+.sidebar {
+	width: 400px;
+	height: 100vh;
+	background: white;
+	position: fixed;
+	right: 0;
+	top: 0;
+	box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+	transition: transform 0.3s ease-in-out;
+	overflow-y: auto;
+	transform: translateX(0);
+	will-change: transform;
+	z-index: 1000;
+}
+
+.sidebar.hidden {
+	transform: translateX(100%);
+}
+
+.sidebar-header {
+	padding: 20px;
+	background: #f8f9fa;
+	border-bottom: 1px solid #e9ecef;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.sidebar-content {
+	padding: 20px;
+}
+
+.close-button {
+	background: none;
+	border: none;
+	font-size: 24px;
+	cursor: pointer;
+	color: #666;
+}
+
+.close-button:hover {
+	color: #333;
+}
+
+/* Form styles */
+input[type="text"],
+textarea {
+	width: 100%;
+	padding: 10px;
+	margin-bottom: 10px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+}
+
+textarea {
+	height: 100px;
+	resize: vertical;
+}
+
+.button {
+	background: #4caf50;
+	color: white;
+	padding: 10px 20px;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 14px;
+}
+
+.button:hover {
+	background: #45a049;
+}
+
+/* Task list styles */
+#tasks-list {
+	margin: 20px 0;
+}
+
+.task-item {
+	padding: 15px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	margin-bottom: 10px;
+	background: #fff;
+}
+
+.task-item.completed {
+	background: #f8f9fa;
+	border-color: #e9ecef;
+}
+
+.task-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 5px;
+}
+
+.task-title {
+	font-weight: bold;
+}
+
+.task-status {
+	font-size: 12px;
+	padding: 3px 8px;
+	border-radius: 12px;
+	background: #e9ecef;
+}
+
+.task-status.done {
+	background: #28a745;
+	color: white;
+}
+
+/* Location marker styles */
+.marker {
+	background-color: #ff3b30;
+	border-radius: 50%;
+	cursor: pointer;
+	width: 24px;
+	height: 24px;
+	border: 3px solid white;
+	box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+	transition: all 0.2s ease;
+	position: relative;
+}
+
+.marker::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 8px;
+	height: 8px;
+	background-color: white;
+	border-radius: 50%;
+}
+
+.marker:hover {
+	background-color: #ff635c;
+	transform: scale(1.2);
+	box-shadow: 0 0 12px rgba(255, 59, 48, 0.6);
+}
+
+/* Maintenance info styles */
+#maintenance-info {
+	background: #f8f9fa;
+	padding: 15px;
+	border-radius: 4px;
+	margin-bottom: 20px;
+}
+
+h3 {
+	margin: 20px 0 10px 0;
+	color: #333;
+}
