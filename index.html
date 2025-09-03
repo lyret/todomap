@@ -2,8 +2,10 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Garden Maintenance Map</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="translucent" />
+		<title></title>Garden Maintenance Map</title>
 
 		<!-- MapLibre GL JS -->
 		<script src="https://unpkg.com/maplibre-gl@3.3.1/dist/maplibre-gl.js"></script>
@@ -18,9 +20,8 @@
 	<body>
 		<div class="container">
 			<!-- Add Location Button -->
-			<button id="add-location-btn" class="floating-button">
+			<button id="add-location-btn" class="floating-button" aria-label="Add Location">
 				<span class="plus-icon">+</span>
-				Add Location
 			</button>
 
 			<!-- Map container -->
@@ -30,7 +31,7 @@
 			<div id="sidebar" class="sidebar hidden">
 				<div class="sidebar-header">
 					<h2 id="location-title">Location Details</h2>
-					<button id="close-sidebar" class="close-button">&times;</button>
+					<button id="close-sidebar" class="close-button" aria-label="Close">&times;</button>
 				</div>
 				<div class="sidebar-content">
 					<div id="location-details">
@@ -57,13 +58,13 @@
 		<div id="location-sheet" class="location-sheet hidden">
 			<div class="sheet-header">
 				<h2>Add New Location</h2>
-				<button id="close-location-sheet" class="close-button">&times;</button>
+				<button id="close-location-sheet" class="close-button" aria-label="Close">&times;</button>
 			</div>
 			<div class="sheet-content">
 				<form id="add-location-form">
 					<div class="form-group">
 						<label for="location-name">Location Name</label>
-						<input type="text" id="location-name" required />
+						<input type="text" id="location-name" required autocomplete="off" />
 					</div>
 
 					<div class="form-group">
@@ -111,6 +112,7 @@
 						<button type="submit" class="button">Save Location</button>
 						<button type="button" class="button button-secondary" id="cancel-location">Cancel</button>
 					</div>
+					<div class="safe-area-bottom"></div>
 				</form>
 			</div>
 		</div>

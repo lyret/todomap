@@ -12,6 +12,7 @@ let map = new maplibregl.Map({
 let currentLocationId = null;
 const markers = new Map(); // To store markers for easy access
 let selectedCoordinates = null; // To store coordinates for new location
+let isLocationPickingMode = false; // Track if we're picking a location
 
 // Initialize map and add markers
 function initializeMap() {
@@ -177,6 +178,12 @@ function showLocationSheet() {
 
 	// Enable location picking mode
 	map.getCanvas().style.cursor = "crosshair";
+	isLocationPickingMode = true;
+
+	// On mobile, zoom out slightly to help with location picking
+	if (window.innerWidth < 768 && map.getZoom() > 17) {
+		map.easeTo({ zoom: 17, duration: 500 });
+	}
 }
 
 function hideLocationSheet() {
@@ -194,8 +201,9 @@ function hideLocationSheet() {
 
 	// Disable location picking mode
 	map.getCanvas().style.cursor = "";
+	isLocationPickingMode = false;
 	selectedCoordinates = null;
-	document.getElementById("selected-coordinates").textContent = "Click on the map to set location";
+	document.getElementById("selected-coordinates").textContent = "Tap on the map to set location";
 }
 
 async function handleLocationSubmit(event) {
@@ -287,13 +295,35 @@ document.addEventListener("DOMContentLoaded", async () => {
 	document.getElementById("cancel-location").addEventListener("click", hideLocationSheet);
 	document.getElementById("add-location-form").addEventListener("submit", handleLocationSubmit);
 
-	// Add map click handler for location selection
+	// Add map click/touch handler for location selection
 	map.on("click", (e) => {
-		if (!document.getElementById("location-sheet").classList.contains("hidden")) {
+		if (isLocationPickingMode) {
+			e.preventDefault();
 			selectedCoordinates = [e.lngLat.lng, e.lngLat.lat];
 			document.getElementById("selected-coordinates").textContent = `[${selectedCoordinates[0].toFixed(6)}, ${selectedCoordinates[1].toFixed(6)}]`;
+
+			// Provide visual feedback
+			const feedback = document.createElement("div");
+			feedback.className = "location-feedback";
+			feedback.style.position = "absolute";
+			feedback.style.left = `${e.point.x}px`;
+			feedback.style.top = `${e.point.y}px`;
+			map.getContainer().appendChild(feedback);
+
+			setTimeout(() => feedback.remove(), 1000);
 		}
 	});
+
+	// Prevent map zoom on double tap when picking location
+	map.on(
+		"touchstart",
+		(e) => {
+			if (isLocationPickingMode) {
+				e.preventDefault();
+			}
+		},
+		{ passive: false },
+	);
 });
 
 // Add map load event listener
