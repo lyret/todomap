@@ -106,7 +106,7 @@ body {
 	appearance: none;
 	width: 16px;
 	height: 16px;
-	background: #4caf50;
+	background: #f87221;
 	border-radius: 50%;
 	cursor: pointer;
 	border: 2px solid white;
@@ -116,7 +116,7 @@ body {
 .date-slider::-moz-range-thumb {
 	width: 16px;
 	height: 16px;
-	background: #4caf50;
+	background: #f87221;
 	border-radius: 50%;
 	cursor: pointer;
 	border: 2px solid white;
@@ -251,7 +251,7 @@ textarea {
 }
 
 .button {
-	background: #4caf50;
+	background: #f87221;
 	color: white;
 	padding: 10px 20px;
 	border: none;
@@ -261,7 +261,15 @@ textarea {
 }
 
 .button:hover {
-	background: #45a049;
+	background: #dd661d;
+}
+
+.button-success {
+	background: #65ab48;
+}
+
+.button-success:hover {
+	background: #558f3c;
 }
 
 /* Task list styles */
@@ -302,31 +310,31 @@ textarea {
 }
 
 .task-item.active {
-	background: #d1ecf1;
-	border-color: #bee5eb;
+	background: #fff3cd;
+	border-color: #ffeaa7;
 }
 
 .task-item.active .task-title {
-	color: #0c5460;
+	color: #856404;
 }
 
 .task-item.active:hover {
-	background: #bee5eb;
-	border-color: #17a2b8;
+	background: #ffeaa7;
+	border-color: #ffc236;
 }
 
 .task-item.completed {
-	background: #e8f5e9;
-	border-color: #c3e6cb;
+	background: #ebf5e9;
+	border-color: #a5d68d;
 }
 
 .task-item.completed .task-title {
-	color: #155724;
+	color: #2c5a1e;
 }
 
 .task-item.completed:hover {
 	background: #d4edda;
-	border-color: #28a745;
+	border-color: #65ab48;
 }
 
 .task-item.postponed {
@@ -411,11 +419,11 @@ textarea {
 }
 
 .status-dot.completed {
-	color: #28a745;
+	color: #65ab48;
 }
 
 .status-dot.active {
-	color: #17a2b8;
+	color: #ffc236;
 }
 
 .status-dot.inactive {
@@ -461,24 +469,24 @@ textarea {
 
 /* Marker with active tasks (blue) */
 .marker-active {
-	background-color: #17a2b8;
+	background-color: #ffc236;
 }
 
 .marker-active:hover {
-	background-color: #138496;
+	background-color: #e6af31;
 	transform: scale(1.2) translate(0, 0);
-	box-shadow: 0 0 12px rgba(23, 162, 184, 0.6);
+	box-shadow: 0 0 12px rgba(255, 194, 54, 0.6);
 }
 
 /* Marker with no active tasks (green) */
 .marker-no-tasks {
-	background-color: #28a745;
+	background-color: #65ab48;
 }
 
 .marker-no-tasks:hover {
-	background-color: #218838;
+	background-color: #558f3c;
 	transform: scale(1.2) translate(0, 0);
-	box-shadow: 0 0 12px rgba(40, 167, 69, 0.6);
+	box-shadow: 0 0 12px rgba(101, 171, 72, 0.6);
 }
 
 /* Maintenance info styles */
@@ -521,8 +529,8 @@ h3 {
 }
 
 .tab-button.active {
-	color: #17a2b8;
-	border-bottom-color: #17a2b8;
+	color: #f87221;
+	border-bottom-color: #f87221;
 }
 
 /* Location sheet styles */
@@ -644,7 +652,7 @@ h3 {
 /* Add task button */
 .add-task-button {
 	width: 100%;
-	background: #17a2b8;
+	background: #f87221;
 	border: none;
 	border-radius: 8px;
 	padding: 12px;
@@ -655,7 +663,7 @@ h3 {
 }
 
 .add-task-button:hover {
-	background: #138496;
+	background: #dd661d;
 }
 
 /* Task Sheet (left side) */

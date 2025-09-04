@@ -1,17 +1,18 @@
 {
-	"name": "todoonamap",
+	"name": "smahusbynskotselplanering",
 	"version": "1.0.0",
-	"description": "A map-based garden maintenance task manager",
+	"description": "A map-based maintenance planning tool for Småhusbyn",
 	"main": "index.html",
 	"scripts": {
 		"serve": "npx http-server . -p 1337 -c-1"
 	},
 	"keywords": [
 		"map",
-		"garden",
 		"maintenance",
+		"planning",
 		"tasks",
-		"maplibre"
+		"maplibre",
+		"småhusbyn"
 	],
 	"author": "",
 	"license": "MIT",
