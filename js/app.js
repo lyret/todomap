@@ -291,8 +291,11 @@ async function showLocationDetails(locationId) {
 
 	currentLocationId = locationId;
 
-	// Update sidebar title
-	document.getElementById("location-title").textContent = location.name;
+	// Update sidebar title and store original values
+	const titleElement = document.getElementById("location-title");
+	titleElement.textContent = location.name;
+	titleElement.dataset.originalName = location.name;
+	titleElement.dataset.originalInfo = location.info;
 
 	// Update location info with markdown rendering
 	const locationInfoHtml = `
@@ -544,6 +547,71 @@ function hideLocationSheet() {
 	isLocationPickingMode = false;
 	selectedCoordinates = null;
 	document.getElementById("selected-coordinates").textContent = "Tap on the map to set location";
+}
+
+// Function to show edit location sheet
+function showEditLocationSheet() {
+	const sheet = document.getElementById("edit-location-sheet");
+	const locationTitle = document.getElementById("location-title");
+
+	// Pre-fill form with existing values
+	document.getElementById("edit-location-name").value = locationTitle.dataset.originalName || "";
+	document.getElementById("edit-location-info").value = locationTitle.dataset.originalInfo || "";
+
+	sheet.style.display = "block";
+	sheet.offsetHeight; // Force reflow
+	sheet.classList.remove("hidden");
+}
+
+// Function to hide edit location sheet
+function hideEditLocationSheet() {
+	const sheet = document.getElementById("edit-location-sheet");
+	sheet.classList.add("hidden");
+	sheet.addEventListener(
+		"transitionend",
+		() => {
+			if (sheet.classList.contains("hidden")) {
+				sheet.style.display = "none";
+			}
+		},
+		{ once: true },
+	);
+}
+
+// Function to handle location edit submission
+async function handleEditLocationSubmit(event) {
+	event.preventDefault();
+
+	const locationNameElement = document.getElementById("edit-location-name");
+	const locationInfoElement = document.getElementById("edit-location-info");
+
+	const updates = {
+		name: locationNameElement.value.trim(),
+		info: locationInfoElement.value.trim(),
+	};
+
+	if (await updateLocation(currentLocationId, updates)) {
+		// Update the location details in the UI
+		const location = await getLocationById(currentLocationId);
+		const titleElement = document.getElementById("location-title");
+		titleElement.textContent = location.name;
+		titleElement.dataset.originalName = location.name;
+		titleElement.dataset.originalInfo = location.info;
+
+		// Update location info with markdown rendering and proper structure
+		const locationInfoHtml = `
+			<div class="location-info">
+				${renderMarkdown(location.info)}
+			</div>
+		`;
+		document.getElementById("location-info").innerHTML = locationInfoHtml;
+
+		// Hide the edit sheet
+		hideEditLocationSheet();
+
+		// Update marker colors since location was updated
+		updateMarkerColors();
+	}
 }
 
 async function handleLocationSubmit(event) {
@@ -1107,6 +1175,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 				const taskSheet = document.getElementById("task-sheet");
 				const editTaskSheet = document.getElementById("edit-task-sheet");
 				const dateSelectionSheet = document.getElementById("date-selection-sheet");
+				const editLocationSheet = document.getElementById("edit-location-sheet");
 
 				if (!dateSelectionSheet.classList.contains("hidden")) {
 					hideDateSelectionSheet();
@@ -1114,6 +1183,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 					hideEditTaskSheet();
 				} else if (!taskSheet.classList.contains("hidden")) {
 					hideTaskSheet();
+				} else if (!editLocationSheet.classList.contains("hidden")) {
+					hideEditLocationSheet();
 				}
 			}
 		});
@@ -1138,6 +1209,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 		dateSelectionSheet.style.display = "none";
 		dateSelectionSheet.classList.add("hidden");
 
+		// Initialize edit location sheet state
+		const editLocationSheet = document.getElementById("edit-location-sheet");
+		editLocationSheet.style.display = "none";
+		editLocationSheet.classList.add("hidden");
+
 		// Set default start date for new tasks to current viewed date
 		document.getElementById("task-start-date").value = viewedDate.toISOString().split("T")[0];
 
@@ -1153,6 +1229,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 	document.getElementById("close-location-sheet").addEventListener("click", hideLocationSheet);
 	document.getElementById("cancel-location").addEventListener("click", hideLocationSheet);
 	document.getElementById("add-location-form").addEventListener("submit", handleLocationSubmit);
+
+	// Add edit location sheet event listeners
+	document.getElementById("edit-location-btn").addEventListener("click", showEditLocationSheet);
+	document.getElementById("close-edit-location-sheet").addEventListener("click", hideEditLocationSheet);
+	document.getElementById("cancel-edit-location").addEventListener("click", hideEditLocationSheet);
+	document.getElementById("edit-location-form").addEventListener("submit", handleEditLocationSubmit);
 
 	// Add map click/touch handler for location selection
 	map.on("click", (e) => {

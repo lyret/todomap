@@ -43,7 +43,10 @@
 			<div id="sidebar" class="sidebar hidden">
 				<div class="sidebar-header">
 					<h2 id="location-title">Location Details</h2>
-					<button id="close-sidebar" class="close-button" aria-label="Close">&times;</button>
+					<div class="header-buttons">
+						<button id="edit-location-btn" class="edit-button" aria-label="Edit location">E</button>
+						<button id="close-sidebar" class="close-button" aria-label="Close">&times;</button>
+					</div>
 				</div>
 				<div class="sidebar-content">
 					<div id="location-details">
@@ -187,6 +190,39 @@
 				<div id="date-options" class="date-options">
 					<!-- Date options will be populated dynamically -->
 				</div>
+			</div>
+			<div class="safe-area-bottom"></div>
+		</div>
+
+		<!-- Edit Location Sheet -->
+		<div id="edit-location-sheet" class="location-sheet hidden">
+			<div class="sheet-header">
+				<div>
+					<h2>Edit Location</h2>
+				</div>
+				<button id="close-edit-location-sheet" class="close-button" aria-label="Close">&times;</button>
+			</div>
+			<div class="sheet-content">
+				<form id="edit-location-form">
+					<div class="form-group">
+						<label for="edit-location-name">Location Name</label>
+						<input type="text" id="edit-location-name" required autocomplete="off" />
+					</div>
+
+					<div class="form-group">
+						<label for="edit-location-info">Location Information</label>
+						<textarea
+							id="edit-location-info"
+							rows="6"
+							placeholder="Enter information about this location.&#10;&#10;You can use:&#10;**bold text**&#10;![Image description](image-url)&#10;&#10;Line breaks will be preserved."
+						></textarea>
+					</div>
+
+					<div class="form-actions">
+						<button type="submit" class="button">Save Changes</button>
+						<button type="button" class="button button-secondary" id="cancel-edit-location">Cancel</button>
+					</div>
+				</form>
 			</div>
 			<div class="safe-area-bottom"></div>
 		</div>

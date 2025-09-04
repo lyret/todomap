@@ -265,3 +265,30 @@ async function getLocationWithActiveTasks(id, viewedDate = new Date()) {
 	}
 	return location;
 }
+
+// Function to update location details
+async function updateLocation(id, updates) {
+	// Validate input data
+	if (!updates || (!updates.name && !updates.info)) {
+		console.error("Invalid update data:", updates);
+		alert("Invalid update data. Please ensure name or info is provided.");
+		return false;
+	}
+
+	// Update the location
+	const { data, error } = await supabase
+		.from("locations")
+		.update({
+			name: updates.name,
+			info: updates.info,
+		})
+		.eq("id", id);
+
+	if (error) {
+		console.error("Error updating location:", error);
+		alert("Failed to update location. Please try again.");
+		return false;
+	}
+
+	return true;
+}
