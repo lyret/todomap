@@ -551,10 +551,27 @@ async function handleLocationSubmit(event) {
 		return;
 	}
 
+	const locationNameElement = document.getElementById("location-name");
+	const locationInfoElement = document.getElementById("location-info");
+
+	if (!locationNameElement || !locationInfoElement) {
+		alert("Form elements not found. Please refresh the page and try again.");
+		return;
+	}
+
+	const locationName = locationNameElement.value?.trim() || "";
+	const locationInfo = locationInfoElement.value?.trim() || "";
+
+	if (!locationName) {
+		alert("Please enter a location name.");
+		locationNameElement.focus();
+		return;
+	}
+
 	const locationData = {
-		name: document.getElementById("location-name").value,
+		name: locationName,
 		coordinates: selectedCoordinates,
-		info: document.getElementById("location-info").value,
+		info: locationInfo || "",
 	};
 
 	const newLocation = await addLocation(locationData);

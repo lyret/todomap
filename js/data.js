@@ -149,14 +149,21 @@ function parseTextareaLines(text) {
 
 // Function to add a new location
 async function addLocation(locationData) {
+	// Validate input data
+	if (!locationData || !locationData.name || !locationData.coordinates) {
+		console.error("Invalid location data:", locationData);
+		alert("Invalid location data. Please ensure name and location are set.");
+		return null;
+	}
+
 	// Insert the new location
 	const { data, error } = await supabase
 		.from("locations")
 		.insert([
 			{
-				name: locationData.name,
+				name: locationData.name.trim(),
 				coordinates: locationData.coordinates,
-				info: locationData.info,
+				info: locationData.info || "",
 			},
 		])
 		.select()
@@ -164,6 +171,7 @@ async function addLocation(locationData) {
 
 	if (error) {
 		console.error("Error adding location:", error);
+		alert("Failed to add location. Please check your internet connection and try again.");
 		return null;
 	}
 
