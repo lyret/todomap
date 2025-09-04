@@ -11,6 +11,7 @@ async function getLocations() {
                 id,
                 info,
                 date_to_start,
+                date_to_complete,
                 date_completed,
                 completion_status,
                 tries
@@ -29,6 +30,7 @@ async function getLocations() {
 			title: task.info.split("\n")[0],
 			description: task.info.split("\n").slice(1).join("\n"),
 			dateToStart: task.date_to_start,
+			dateToComplete: task.date_to_complete,
 			dateCompleted: task.date_completed,
 			completionStatus: task.completion_status,
 			completed: task.completion_status === "done",
@@ -51,6 +53,7 @@ async function getLocationById(id) {
                 id,
                 info,
                 date_to_start,
+                date_to_complete,
                 date_completed,
                 completion_status,
                 tries
@@ -72,6 +75,7 @@ async function getLocationById(id) {
 			title: task.info.split("\n")[0],
 			description: task.info.split("\n").slice(1).join("\n"),
 			dateToStart: task.date_to_start,
+			dateToComplete: task.date_to_complete,
 			dateCompleted: task.date_completed,
 			completionStatus: task.completion_status,
 			completed: task.completion_status === "done",
@@ -89,6 +93,7 @@ async function addTask(locationId, task) {
 				location_id: locationId,
 				info: `${task.title}\n${task.description}`,
 				date_to_start: task.dateToStart || new Date().toISOString(),
+				date_to_complete: task.dateToComplete || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
 				tries: 0,
 			},
 		])
@@ -103,6 +108,7 @@ async function addTask(locationId, task) {
 	return {
 		...data,
 		dateToStart: data.date_to_start,
+		dateToComplete: data.date_to_complete,
 	};
 }
 
@@ -195,10 +201,15 @@ async function completeTask(taskId, completionStatus, newStartDate = null) {
 	if (newStartDate) {
 		const newTries = completionStatus === "done" ? 0 : originalTask.tries + 1;
 
+		// Calculate new completion date based on original task duration
+		const originalDuration = new Date(originalTask.date_to_complete) - new Date(originalTask.date_to_start);
+		const newCompleteDate = new Date(newStartDate.getTime() + originalDuration);
+
 		const { error: createError } = await supabase.from("tasks").insert({
 			location_id: originalTask.location_id,
 			info: originalTask.info,
 			date_to_start: newStartDate.toISOString(),
+			date_to_complete: newCompleteDate.toISOString(),
 			tries: newTries,
 		});
 

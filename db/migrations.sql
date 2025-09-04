@@ -16,6 +16,7 @@ CREATE TABLE tasks (
     location_id BIGINT REFERENCES locations(id) ON DELETE CASCADE,
     info TEXT NOT NULL,
     date_to_start TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    date_to_complete TIMESTAMP WITH TIME ZONE,
     date_completed TIMESTAMP WITH TIME ZONE,
     completion_status TEXT CHECK (completion_status IN ('done', 'postponed', 'canceled')),
     tries INTEGER DEFAULT 0
@@ -60,39 +61,43 @@ VALUES
 );
 
 -- Insert sample tasks
-INSERT INTO tasks (location_id, info, date_to_start, tries)
+INSERT INTO tasks (location_id, info, date_to_start, date_to_complete, tries)
 SELECT
     l.id,
     'Remove dead wood and shape bushes\nSpring pruning maintenance for the rose garden',
     NOW() - INTERVAL '2 days',
+    NOW() + INTERVAL '5 days',
     0
 FROM locations l
 WHERE l.name = 'Rose Garden';
 
-INSERT INTO tasks (location_id, info, date_to_start, date_completed, tries)
+INSERT INTO tasks (location_id, info, date_to_start, date_to_complete, date_completed, tries)
 SELECT
     l.id,
     'Apply balanced rose fertilizer\nUse organic fertilizer for better results',
     NOW() - INTERVAL '5 days',
+    NOW() + INTERVAL '2 days',
     NOW() - INTERVAL '1 day',
     1
 FROM locations l
 WHERE l.name = 'Rose Garden';
 
-INSERT INTO tasks (location_id, info, date_to_start, tries)
+INSERT INTO tasks (location_id, info, date_to_start, date_to_complete, tries)
 SELECT
     l.id,
     'Plant tomato seedlings\nMaintain proper spacing between plants for optimal growth',
     NOW() + INTERVAL '3 days',
+    NOW() + INTERVAL '10 days',
     2
 FROM locations l
 WHERE l.name = 'Vegetable Patch';
 
-INSERT INTO tasks (location_id, info, date_to_start, tries)
+INSERT INTO tasks (location_id, info, date_to_start, date_to_complete, tries)
 SELECT
     l.id,
     'Harvest basil before flowering\nBest flavor when harvested in the morning',
     NOW() + INTERVAL '1 day',
+    NOW() + INTERVAL '3 days',
     0
 FROM locations l
 WHERE l.name = 'Herb Garden';
