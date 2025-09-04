@@ -61,6 +61,12 @@ class DateSliderControl {
 			// Update global viewed date
 			viewedDate = newDate;
 
+			// Store current date label
+			currentDateLabel = option.label;
+
+			// Update active tab label based on date selection
+			updateActiveTabLabel(option.label);
+
 			// Update marker colors based on new date
 			updateMarkerColors();
 
@@ -187,7 +193,8 @@ let isLocationPickingMode = false; // Track if we're picking a location
 let viewedDate = new Date(); // Current viewed date for filtering tasks
 let currentTaskId = null; // Current task being edited
 let taskAction = null; // Track if marking as done or not done
-let taskFilter = "active"; // Current task filter: "active", "upcoming", or "history"
+let taskFilter = "active"; // Current task filter (active, upcoming, history)
+let currentDateLabel = "Now"; // Current date slider label for tab updates
 
 // Initialize map and add markers
 function initializeMap() {
@@ -298,6 +305,33 @@ async function showLocationDetails(locationId) {
 }
 
 // Update tasks list
+function updateActiveTabLabel(dateLabel) {
+	const activeTab = document.querySelector('.tab-button[data-filter="active"]');
+	if (activeTab) {
+		if (dateLabel === "Now") {
+			activeTab.textContent = "Now";
+		} else if (dateLabel === "Next Week") {
+			activeTab.textContent = "Next week";
+		} else if (dateLabel === "2 Weeks") {
+			activeTab.textContent = "In 2 weeks";
+		} else if (dateLabel === "Next Month") {
+			activeTab.textContent = "Next month";
+		} else {
+			activeTab.textContent = `${dateLabel}`;
+		}
+	}
+}
+
+function updateAddTaskButtonVisibility() {
+	const addTaskButton = document.getElementById("add-task-btn");
+	const activeTab = document.querySelector(".tab-button.active");
+
+	if (addTaskButton && activeTab) {
+		const isActiveTabSelected = activeTab.getAttribute("data-filter") === "active";
+		addTaskButton.style.display = isActiveTabSelected ? "block" : "none";
+	}
+}
+
 function updateTasksList(location, currentViewedDate = new Date()) {
 	// Filter tasks based on current filter
 	let filteredTasks = location.tasks;
@@ -377,6 +411,9 @@ function updateTasksList(location, currentViewedDate = new Date()) {
 		.join("");
 
 	document.getElementById("tasks-list").innerHTML = tasksHtml;
+
+	// Update add task button visibility after updating tasks list
+	updateAddTaskButtonVisibility();
 }
 
 // Toggle task completion
@@ -395,12 +432,18 @@ async function handleNewTaskSubmission(event) {
 
 	const taskInfoInput = document.getElementById("task-info");
 	const taskStartDateInput = document.getElementById("task-start-date");
+	const selectedDurationRadio = document.querySelector('input[name="task-duration"]:checked');
 	const infoLines = taskInfoInput.value.split("\n");
+
+	const startDate = taskStartDateInput.value ? new Date(taskStartDateInput.value) : new Date();
+	const duration = selectedDurationRadio ? selectedDurationRadio.value : "week";
+	const completionDate = calculateCompletionDate(duration, startDate);
 
 	const newTask = {
 		title: infoLines[0],
 		description: infoLines.slice(1).join("\n"),
-		dateToStart: taskStartDateInput.value ? new Date(taskStartDateInput.value).toISOString() : new Date().toISOString(),
+		dateToStart: startDate.toISOString(),
+		dateToComplete: completionDate.toISOString(),
 	};
 
 	const addedTask = await addTask(currentLocationId, newTask);
@@ -521,6 +564,24 @@ function hideTaskSheet() {
 				sheet.style.display = "none";
 				// Reset form
 				document.getElementById("add-task-form").reset();
+				// Reset completion date preview
+				const previewElement = document.getElementById("completion-date-preview");
+				if (previewElement) {
+					previewElement.textContent = "Due date will be calculated based on start date";
+				}
+				// Clear radio button active states
+				document.querySelectorAll(".radio-label").forEach((label) => {
+					label.classList.remove("active");
+				});
+				// Clean up event listeners
+				const startDateInput = document.getElementById("task-start-date");
+				const durationRadios = document.querySelectorAll('input[name="task-duration"]');
+				if (startDateInput) {
+					startDateInput.removeEventListener("change", updateCompletionDatePreview);
+				}
+				durationRadios.forEach((radio) => {
+					radio.removeEventListener("change", updateCompletionDatePreview);
+				});
 			}
 		},
 		{ once: true },
@@ -538,6 +599,21 @@ function showAddTaskSheet() {
 
 	// Set default start date to current viewed date from slider
 	document.getElementById("task-start-date").value = viewedDate.toISOString().split("T")[0];
+
+	// Set default task duration based on current date slider position
+	setDefaultTaskDuration();
+
+	// Update completion date preview
+	updateCompletionDatePreview();
+
+	// Add event listeners for preview updates
+	document.getElementById("task-start-date").addEventListener("change", updateCompletionDatePreview);
+	document.querySelectorAll('input[name="task-duration"]').forEach((radio) => {
+		radio.addEventListener("change", updateCompletionDatePreview);
+	});
+
+	// Initialize active state styling
+	updateRadioButtonActiveState();
 
 	// Focus on the first input
 	document.getElementById("task-info").focus();
@@ -686,6 +762,103 @@ function getNextSeasonDate(season) {
 	return targetDate;
 }
 
+// Calculate completion date based on duration and current viewed date
+function calculateCompletionDate(duration, startDate = viewedDate) {
+	const completionDate = new Date(startDate);
+
+	switch (duration) {
+		case "week":
+			completionDate.setDate(completionDate.getDate() + 7);
+			break;
+		case "month":
+			completionDate.setMonth(completionDate.getMonth() + 1);
+			break;
+		case "season":
+			// Add approximately 3 months (90 days) for seasonal tasks
+			completionDate.setDate(completionDate.getDate() + 90);
+			break;
+		default:
+			// Default to one week if duration is not recognized
+			completionDate.setDate(completionDate.getDate() + 7);
+	}
+
+	return completionDate;
+}
+
+// Set default task duration based on current date slider position
+function setDefaultTaskDuration() {
+	let defaultValue;
+
+	// Default selection based on current date slider position
+	if (currentDateLabel === "Now" || currentDateLabel === "Next Week") {
+		defaultValue = "week";
+	} else if (currentDateLabel === "2 Weeks" || currentDateLabel === "Next Month") {
+		defaultValue = "month";
+	} else {
+		// For seasonal selections
+		defaultValue = "season";
+	}
+
+	// Set the appropriate radio button as checked
+	const radioButtons = document.querySelectorAll('input[name="task-duration"]');
+	radioButtons.forEach((radio) => {
+		radio.checked = radio.value === defaultValue;
+	});
+
+	// Trigger preview update and active state styling after setting default value
+	updateCompletionDatePreview();
+	updateRadioButtonActiveState();
+}
+
+// Update completion date preview in task form
+function updateCompletionDatePreview() {
+	const startDateInput = document.getElementById("task-start-date");
+	const selectedDurationRadio = document.querySelector('input[name="task-duration"]:checked');
+	const previewElement = document.getElementById("completion-date-preview");
+
+	if (!startDateInput || !selectedDurationRadio || !previewElement) return;
+
+	const startDate = startDateInput.value ? new Date(startDateInput.value) : viewedDate;
+	const duration = selectedDurationRadio.value || "week";
+	const completionDate = calculateCompletionDate(duration, startDate);
+
+	const options = { weekday: "short", year: "numeric", month: "short", day: "numeric" };
+	const formattedDate = completionDate.toLocaleDateString("en-US", options);
+
+	let durationText;
+	switch (duration) {
+		case "week":
+			durationText = "one week";
+			break;
+		case "month":
+			durationText = "one month";
+			break;
+		case "season":
+			durationText = "the season (~3 months)";
+			break;
+		default:
+			durationText = "the selected period";
+	}
+
+	previewElement.textContent = `Task will be due ${formattedDate} (${durationText} from start date)`;
+
+	// Update active state styling for radio button labels
+	updateRadioButtonActiveState();
+}
+
+// Update active state styling for radio button labels
+function updateRadioButtonActiveState() {
+	const radioLabels = document.querySelectorAll(".radio-label");
+	radioLabels.forEach((label) => {
+		const radio = label.querySelector('input[type="radio"]');
+		if (radio && radio.checked) {
+			label.classList.add("active");
+		} else {
+			label.classList.remove("active");
+		}
+	});
+}
+
 // Populate date selection options dynamically
 function populateDateOptions() {
 	const dateOptionsContainer = document.getElementById("date-options");
@@ -822,6 +995,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 				// Update filter and refresh tasks
 				taskFilter = filter;
+
+				// Update add task button visibility
+				updateAddTaskButtonVisibility();
+
+				// Update active tab label if switching to active tab
+				if (filter === "active") {
+					updateActiveTabLabel(currentDateLabel);
+				}
+
 				if (currentLocationId) {
 					getLocationById(currentLocationId).then((location) => {
 						updateTasksList(location, viewedDate);
@@ -904,6 +1086,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 		// Set default start date for new tasks to current viewed date
 		document.getElementById("task-start-date").value = viewedDate.toISOString().split("T")[0];
+
+		// Initialize active tab label and button visibility
+		currentDateLabel = "Now";
+		updateActiveTabLabel(currentDateLabel);
+		updateAddTaskButtonVisibility();
 	} catch (error) {
 		console.error("Error initializing application:", error);
 	}

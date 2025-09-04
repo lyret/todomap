@@ -33,7 +33,7 @@
 						<div id="location-info"></div>
 						<div class="task-filter-tabs">
 							<button class="tab-button active" data-filter="active">Active</button>
-							<button class="tab-button" data-filter="upcoming">Upcoming</button>
+							<button class="tab-button" data-filter="upcoming">Later</button>
 							<button class="tab-button" data-filter="history">History</button>
 						</div>
 						<div id="tasks-list"></div>
@@ -104,6 +104,24 @@
 					<div class="form-group">
 						<label for="task-start-date">Start Date:</label>
 						<input type="date" id="task-start-date" />
+					</div>
+					<div class="form-group">
+						<label>Task Duration:</label>
+						<div class="radio-group">
+							<label class="radio-label">
+								<input type="radio" name="task-duration" value="week" checked />
+								<span>Due in a week</span>
+							</label>
+							<label class="radio-label">
+								<input type="radio" name="task-duration" value="month" />
+								<span>Due in a month</span>
+							</label>
+							<label class="radio-label">
+								<input type="radio" name="task-duration" value="season" />
+								<span>Due in the season</span>
+							</label>
+						</div>
+						<small id="completion-date-preview" class="completion-preview">Due date will be calculated based on start date</small>
 					</div>
 					<div class="form-actions">
 						<button type="submit" class="button">Add Task</button>
