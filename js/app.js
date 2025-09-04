@@ -64,6 +64,12 @@ class DateSliderControl {
 			// Store current date label
 			currentDateLabel = option.label;
 
+			// Update task duration labels if task sheet is open
+			const taskSheet = document.getElementById("task-sheet");
+			if (taskSheet && taskSheet.style.display === "block") {
+				this.updateTaskDurationLabels(newDate);
+			}
+
 			// Update active tab label based on date selection
 			updateActiveTabLabel(option.label);
 
@@ -83,10 +89,9 @@ class DateSliderControl {
 		return this._container;
 	}
 
-	_getCurrentSeason() {
-		const now = new Date();
-		const month = now.getMonth();
-		const day = now.getDate();
+	_getCurrentSeason(date = new Date()) {
+		const month = date.getMonth();
+		const day = date.getDate();
 
 		// Spring: March 20 - June 20
 		if (month > 2 || (month === 2 && day >= 20)) {
@@ -108,6 +113,29 @@ class DateSliderControl {
 		}
 		// Winter: December 21 - March 19
 		return "winter";
+	}
+
+	_formatSeasonName(season) {
+		return season.charAt(0).toUpperCase() + season.slice(1);
+	}
+
+	updateTaskDurationLabels(date) {
+		const season = this._getCurrentSeason(date);
+		const seasonLabel = this._formatSeasonName(season);
+		const seasonOption = document.querySelector('input[name="task-duration"][value="season"] + span');
+		if (seasonOption) {
+			seasonOption.textContent = `Due in ${seasonLabel}`;
+		}
+	}
+
+	_formatSeasonName(season) {
+		return season.charAt(0).toUpperCase() + season.slice(1);
+	}
+
+	_updateSeasonLabel(date) {
+		const season = this._getCurrentSeason(date);
+		const seasonLabel = this._formatSeasonName(season);
+		document.getElementById("season-duration-label").textContent = `Due in ${seasonLabel}`;
 	}
 
 	_getSeasonStartDate(season, year) {
@@ -160,8 +188,13 @@ class DateSliderControl {
 			const season = seasons[seasonIndex];
 			const days = this._getDaysToNextSeason(season);
 
-			// Capitalize first letter
-			const label = `Next ${season.charAt(0).toUpperCase() + season.slice(1)}`;
+			// Only use "Next" prefix when we loop back to the current season
+			let label;
+			if (season === currentSeason) {
+				label = `Next ${season.charAt(0).toUpperCase() + season.slice(1)}`;
+			} else {
+				label = season.charAt(0).toUpperCase() + season.slice(1);
+			}
 
 			seasonOptions.push({ label, days });
 		}
@@ -196,6 +229,7 @@ let currentTaskId = null; // Current task being edited
 let taskAction = null; // Track if marking as done or not done
 let taskFilter = "active"; // Current task filter (active, upcoming, history)
 let currentDateLabel = "Now"; // Current date slider label for tab updates
+let currentTimeFrame = null; // Current time frame for task button
 
 // Initialize map and add markers
 function initializeMap() {
@@ -319,17 +353,49 @@ async function showLocationDetails(locationId) {
 // Update tasks list
 function updateActiveTabLabel(dateLabel) {
 	const activeTab = document.querySelector('.tab-button[data-filter="active"]');
+	const addTaskBtn = document.getElementById("add-task-btn");
+
 	if (activeTab) {
+		// Remove any existing seasonal class
+		activeTab.classList.remove("seasonal");
+
+		// Update the current time frame for task button
 		if (dateLabel === "Now") {
 			activeTab.textContent = "Now";
+			currentTimeFrame = "today";
 		} else if (dateLabel === "Next Week") {
 			activeTab.textContent = "Next week";
+			currentTimeFrame = "next week";
 		} else if (dateLabel === "2 Weeks") {
 			activeTab.textContent = "In 2 weeks";
+			currentTimeFrame = "in 2 weeks";
 		} else if (dateLabel === "Next Month") {
 			activeTab.textContent = "Next month";
+			currentTimeFrame = "next month";
+		} else if (dateLabel.includes("Spring")) {
+			activeTab.textContent = dateLabel;
+			currentTimeFrame = "spring";
+			activeTab.classList.add("seasonal");
+		} else if (dateLabel.includes("Summer")) {
+			activeTab.textContent = dateLabel;
+			currentTimeFrame = "summer";
+			activeTab.classList.add("seasonal");
+		} else if (dateLabel.includes("Autumn")) {
+			activeTab.textContent = dateLabel;
+			currentTimeFrame = "autumn";
+			activeTab.classList.add("seasonal");
+		} else if (dateLabel.includes("Winter")) {
+			activeTab.textContent = dateLabel;
+			currentTimeFrame = "winter";
+			activeTab.classList.add("seasonal");
 		} else {
-			activeTab.textContent = `${dateLabel}`;
+			activeTab.textContent = dateLabel;
+			currentTimeFrame = "later";
+		}
+
+		// Update add task button text
+		if (addTaskBtn) {
+			addTaskBtn.textContent = currentTimeFrame === "today" ? "+ Add New Task" : `+ Add Task for ${currentTimeFrame}`;
 		}
 	}
 }
@@ -711,6 +777,13 @@ function hideTaskSheet() {
 }
 
 // Show add task sheet
+function getStartOfWeek(date) {
+	const d = new Date(date);
+	const day = d.getDay();
+	const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday
+	return new Date(d.setDate(diff));
+}
+
 function showAddTaskSheet() {
 	if (!currentLocationId) return;
 
@@ -719,17 +792,23 @@ function showAddTaskSheet() {
 	sheet.offsetHeight; // Force reflow
 	sheet.classList.remove("hidden");
 
-	// Set default start date to current viewed date from slider
-	document.getElementById("task-start-date").value = viewedDate.toISOString().split("T")[0];
+	// Update task duration labels based on current date
+	dateSliderControl.updateTaskDurationLabels(viewedDate);
+
+	// Set default start date to beginning of week from current viewed date
+	const startOfWeek = getStartOfWeek(viewedDate);
+	document.getElementById("task-start-date").value = startOfWeek.toISOString().split("T")[0];
 
 	// Set default task duration based on current date slider position
 	setDefaultTaskDuration();
+
+	// Update the task duration labels based on current date
+	dateSliderControl.updateTaskDurationLabels(viewedDate);
 
 	// Update completion date preview
 	updateCompletionDatePreview();
 
 	// Add event listeners for preview updates
-	document.getElementById("task-start-date").addEventListener("change", updateCompletionDatePreview);
 	document.querySelectorAll('input[name="task-duration"]').forEach((radio) => {
 		radio.addEventListener("change", updateCompletionDatePreview);
 	});
@@ -1217,8 +1296,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 		// Set default start date for new tasks to current viewed date
 		document.getElementById("task-start-date").value = viewedDate.toISOString().split("T")[0];
 
-		// Initialize active tab label and button visibility
+		// Initialize active tab label, time frame and button visibility
 		currentDateLabel = "Now";
+		currentTimeFrame = "today";
 		updateActiveTabLabel(currentDateLabel);
 		updateAddTaskButtonVisibility();
 	} catch (error) {

@@ -137,7 +137,7 @@
 							</label>
 							<label class="radio-label">
 								<input type="radio" name="task-duration" value="season" />
-								<span>Due in the season</span>
+								<span id="season-duration-label">Due in the season</span>
 							</label>
 						</div>
 						<small id="completion-date-preview" class="completion-preview">Due date will be calculated based on start date</small>
@@ -153,13 +153,8 @@
 
 		<!-- Edit Task Sheet -->
 		<div id="edit-task-sheet" class="task-sheet hidden">
-			<div class="sheet-header">
-				<div>
-					<h2 id="edit-task-title">Edit Task</h2>
-				</div>
-				<button id="close-edit-task-sheet" class="close-button" aria-label="Close">&times;</button>
-			</div>
 			<div class="sheet-content">
+				<button id="close-edit-task-sheet" class="close-button" aria-label="Close">&times;</button>
 				<div id="task-details">
 					<h3 id="task-name">Task Name</h3>
 					<p id="task-description">Task description...</p>
