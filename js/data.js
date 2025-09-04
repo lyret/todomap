@@ -12,6 +12,7 @@ async function getLocations() {
                 info,
                 date_to_start,
                 date_completed,
+                completion_status,
                 tries
             )
         `);
@@ -29,7 +30,8 @@ async function getLocations() {
 			description: task.info.split("\n").slice(1).join("\n"),
 			dateToStart: task.date_to_start,
 			dateCompleted: task.date_completed,
-			completed: !!task.date_completed,
+			completionStatus: task.completion_status,
+			completed: task.completion_status === "done",
 			isActive: new Date(task.date_to_start) <= new Date(),
 		})),
 	}));
@@ -50,6 +52,7 @@ async function getLocationById(id) {
                 info,
                 date_to_start,
                 date_completed,
+                completion_status,
                 tries
             )
         `,
@@ -70,7 +73,8 @@ async function getLocationById(id) {
 			description: task.info.split("\n").slice(1).join("\n"),
 			dateToStart: task.date_to_start,
 			dateCompleted: task.date_completed,
-			completed: !!task.date_completed,
+			completionStatus: task.completion_status,
+			completed: task.completion_status === "done",
 			isActive: new Date(task.date_to_start) <= new Date(),
 		})),
 	};
@@ -163,13 +167,45 @@ async function addLocation(locationData) {
 	};
 }
 
-// Function to update task with new start date and completion status
-async function updateTask(taskId, updateData) {
-	const { error } = await supabase.from("tasks").update(updateData).eq("id", taskId);
+// Function to complete a task and optionally create a new one
+async function completeTask(taskId, completionStatus, newStartDate = null) {
+	// Get original task
+	const { data: originalTask, error: fetchError } = await supabase.from("tasks").select("*").eq("id", taskId).single();
 
-	if (error) {
-		console.error("Error updating task:", error);
+	if (fetchError) {
+		console.error("Error fetching task:", fetchError);
 		return false;
+	}
+
+	// Update original task with completion status
+	const { error: updateError } = await supabase
+		.from("tasks")
+		.update({
+			date_completed: new Date().toISOString(),
+			completion_status: completionStatus,
+		})
+		.eq("id", taskId);
+
+	if (updateError) {
+		console.error("Error updating task:", updateError);
+		return false;
+	}
+
+	// Create new task if date is selected (not "never")
+	if (newStartDate) {
+		const newTries = completionStatus === "done" ? 0 : originalTask.tries + 1;
+
+		const { error: createError } = await supabase.from("tasks").insert({
+			location_id: originalTask.location_id,
+			info: originalTask.info,
+			date_to_start: newStartDate.toISOString(),
+			tries: newTries,
+		});
+
+		if (createError) {
+			console.error("Error creating new task:", createError);
+			return false;
+		}
 	}
 
 	return true;

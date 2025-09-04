@@ -19,13 +19,6 @@
 	</head>
 	<body>
 		<div class="container">
-			<!-- Date picker for viewed date -->
-			<div id="date-picker-container" class="date-picker-container">
-				<label for="viewed-date">Viewed Date:</label>
-				<input type="date" id="viewed-date" />
-				<button id="today-btn" class="today-button">Today</button>
-			</div>
-
 			<!-- Map container -->
 			<div id="map"></div>
 
@@ -136,9 +129,9 @@
 					</div>
 				</div>
 				<div class="form-actions">
-					<button type="button" class="button" id="mark-done-btn">Mark as Done</button>
-					<button type="button" class="button button-secondary" id="mark-not-done-btn">Postpone</button>
-					<button type="button" class="button button-secondary">Close</button>
+					<button type="button" class="button" id="complete-btn">Complete</button>
+					<button type="button" class="button button-secondary" id="postpone-btn">Postpone</button>
+					<button type="button" class="button button-tertiary" id="cancel-btn">Cancel</button>
 				</div>
 			</div>
 			<div class="safe-area-bottom"></div>
@@ -153,14 +146,8 @@
 				<button id="close-date-selection-sheet" class="close-button" aria-label="Close">&times;</button>
 			</div>
 			<div class="sheet-content">
-				<div class="date-options">
-					<button class="date-option" data-period="next-week">Next Week</button>
-					<button class="date-option" data-period="next-2-weeks">Next 2 Weeks</button>
-					<button class="date-option" data-period="next-month">Next Month</button>
-					<button class="date-option" data-period="next-spring">Next Spring</button>
-					<button class="date-option" data-period="next-summer">Next Summer</button>
-					<button class="date-option" data-period="next-autumn">Next Autumn</button>
-					<button class="date-option" data-period="next-winter">Next Winter</button>
+				<div id="date-options" class="date-options">
+					<!-- Date options will be populated dynamically -->
 				</div>
 			</div>
 			<div class="safe-area-bottom"></div>

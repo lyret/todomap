@@ -20,6 +20,152 @@ class AddLocationControl {
 	}
 }
 
+// Custom control for date selection
+class DateSliderControl {
+	onAdd(map) {
+		this._map = map;
+		this._container = document.createElement("div");
+		this._container.className = "maplibregl-ctrl date-slider-control";
+
+		// Create slider container
+		const sliderContainer = document.createElement("div");
+		sliderContainer.className = "date-slider-container";
+
+		// Create label
+		this._label = document.createElement("div");
+		this._label.className = "date-slider-label";
+		this._label.textContent = "Now";
+
+		// Create slider
+		this._slider = document.createElement("input");
+		this._slider.type = "range";
+		this._slider.className = "date-slider";
+		this._slider.min = "0";
+		this._slider.step = "1";
+
+		// Build date options with proper seasonal ordering
+		this._dateOptions = this._buildDateOptions();
+		this._slider.max = (this._dateOptions.length - 1).toString();
+		this._slider.value = "0";
+
+		// Add event listener
+		this._slider.addEventListener("input", (e) => {
+			const index = parseInt(e.target.value);
+			const option = this._dateOptions[index];
+			this._label.textContent = option.label;
+
+			// Calculate new viewed date
+			const newDate = new Date();
+			newDate.setDate(newDate.getDate() + option.days);
+
+			// Update global viewed date
+			viewedDate = newDate;
+
+			// Refresh current location if open
+			if (currentLocationId) {
+				showLocationDetails(currentLocationId);
+			}
+		});
+
+		sliderContainer.appendChild(this._label);
+		sliderContainer.appendChild(this._slider);
+		this._container.appendChild(sliderContainer);
+
+		return this._container;
+	}
+
+	_getCurrentSeason() {
+		const now = new Date();
+		const month = now.getMonth();
+		const day = now.getDate();
+
+		// Spring: March 20 - June 20
+		if (month > 2 || (month === 2 && day >= 20)) {
+			if (month < 5 || (month === 5 && day < 21)) {
+				return "spring";
+			}
+		}
+		// Summer: June 21 - September 21
+		if (month > 5 || (month === 5 && day >= 21)) {
+			if (month < 8 || (month === 8 && day < 22)) {
+				return "summer";
+			}
+		}
+		// Autumn: September 22 - December 20
+		if (month > 8 || (month === 8 && day >= 22)) {
+			if (month < 11 || (month === 11 && day < 21)) {
+				return "autumn";
+			}
+		}
+		// Winter: December 21 - March 19
+		return "winter";
+	}
+
+	_getSeasonStartDate(season, year) {
+		switch (season) {
+			case "spring":
+				return new Date(year, 2, 20); // March 20
+			case "summer":
+				return new Date(year, 5, 21); // June 21
+			case "autumn":
+				return new Date(year, 8, 22); // September 22
+			case "winter":
+				return new Date(year, 11, 21); // December 21
+			default:
+				return new Date();
+		}
+	}
+
+	_getDaysToNextSeason(season) {
+		const now = new Date();
+		const currentYear = now.getFullYear();
+		let targetDate = this._getSeasonStartDate(season, currentYear);
+
+		// If the date has passed this year, use next year
+		if (targetDate <= now) {
+			targetDate = this._getSeasonStartDate(season, currentYear + 1);
+		}
+
+		return Math.ceil((targetDate - now) / (1000 * 60 * 60 * 24));
+	}
+
+	_buildDateOptions() {
+		const currentSeason = this._getCurrentSeason();
+		const seasons = ["spring", "summer", "autumn", "winter"];
+
+		// Find current season index
+		const currentSeasonIndex = seasons.indexOf(currentSeason);
+
+		// Build base options
+		const baseOptions = [
+			{ label: "Now", days: 0 },
+			{ label: "Next Week", days: 7 },
+			{ label: "2 Weeks", days: 14 },
+			{ label: "Next Month", days: 30 },
+		];
+
+		// Add seasons in order starting from next season
+		const seasonOptions = [];
+		for (let i = 1; i <= 4; i++) {
+			const seasonIndex = (currentSeasonIndex + i) % 4;
+			const season = seasons[seasonIndex];
+			const days = this._getDaysToNextSeason(season);
+
+			// Capitalize first letter
+			const label = `Next ${season.charAt(0).toUpperCase() + season.slice(1)}`;
+
+			seasonOptions.push({ label, days });
+		}
+
+		return [...baseOptions, ...seasonOptions];
+	}
+
+	onRemove() {
+		this._container.parentNode.removeChild(this._container);
+		this._map = undefined;
+	}
+}
+
 // Initialize map
 let map = new maplibregl.Map({
 	container: "map",
@@ -44,6 +190,7 @@ function initializeMap() {
 	// Add navigation and location controls
 	map.addControl(new maplibregl.NavigationControl());
 	map.addControl(new AddLocationControl(), "top-right");
+	map.addControl(new DateSliderControl(), "top-left");
 
 	// Add scale control
 	map.addControl(
@@ -130,16 +277,35 @@ function updateTasksList(location, currentViewedDate = new Date()) {
 	const tasksHtml = location.tasks
 		.map((task) => {
 			const isActive = new Date(task.dateToStart) <= currentViewedDate;
-			const taskClass = task.completed ? "completed" : isActive ? "" : "inactive";
+			const hasCompletionStatus = task.completionStatus;
+			const taskClass = hasCompletionStatus ? "completed" : isActive ? "" : "inactive";
 
 			// Get status indicator
 			let statusIndicator = "";
-			if (task.completed) {
-				statusIndicator = `<span class="status-dot completed">✓</span>`;
+			if (hasCompletionStatus) {
+				switch (task.completionStatus) {
+					case "done":
+						statusIndicator = `<span class="status-dot completed">✓</span>`;
+						break;
+					case "postponed":
+						statusIndicator = `<span class="status-dot postponed">⏸</span>`;
+						break;
+					case "canceled":
+						statusIndicator = `<span class="status-dot canceled">✕</span>`;
+						break;
+				}
 			} else if (isActive) {
 				statusIndicator = `<span class="status-dot active">●</span>`;
 			} else {
 				statusIndicator = `<span class="status-dot inactive">○</span>`;
+			}
+
+			// Build meta information
+			let metaInfo = `Start: ${new Date(task.dateToStart).toLocaleDateString()}`;
+			if (task.tries > 0) metaInfo += ` • ${task.tries} tries`;
+			if (hasCompletionStatus) {
+				const statusLabel = task.completionStatus.charAt(0).toUpperCase() + task.completionStatus.slice(1);
+				metaInfo += ` • ${statusLabel} ${new Date(task.dateCompleted).toLocaleDateString()}`;
 			}
 
 			return `
@@ -148,11 +314,7 @@ function updateTasksList(location, currentViewedDate = new Date()) {
                 ${statusIndicator}
                 <div class="task-text">
                     <span class="task-title">${task.title}</span>
-                    <small class="task-meta">
-                        Start: ${new Date(task.dateToStart).toLocaleDateString()}
-                        ${task.tries > 0 ? ` • ${task.tries} tries` : ""}
-                        ${task.completed ? ` • Completed ${new Date(task.dateCompleted).toLocaleDateString()}` : ""}
-                    </small>
+                    <small class="task-meta">${metaInfo}</small>
                 </div>
             </div>
         </div>
@@ -339,7 +501,8 @@ function showTaskSheet(taskId) {
 		document.getElementById("task-name").textContent = task.title;
 		document.getElementById("task-description").textContent = task.description;
 		document.getElementById("task-start-date-display").textContent = new Date(task.dateToStart).toLocaleDateString();
-		document.getElementById("task-status-display").textContent = task.completed ? "Completed" : "Pending";
+		const statusText = task.completionStatus ? `${task.completionStatus.charAt(0).toUpperCase() + task.completionStatus.slice(1)}` : "Pending";
+		document.getElementById("task-status-display").textContent = statusText;
 		document.getElementById("task-tries-display").textContent = task.tries;
 
 		// Show sheet
@@ -370,8 +533,22 @@ function hideEditTaskSheet() {
 function showDateSelectionSheet(action) {
 	taskAction = action;
 
-	const title = action === "done" ? "Mark as Done - When to restart?" : "Postpone - When to start?";
+	let title;
+	switch (action) {
+		case "complete":
+			title = "Complete Task - When to restart?";
+			break;
+		case "postpone":
+			title = "Postpone Task - When to start again?";
+			break;
+		case "cancel":
+			title = "Cancel Task - When to restart?";
+			break;
+	}
 	document.getElementById("date-selection-title").textContent = title;
+
+	// Populate date options dynamically using the same logic as slider
+	populateDateOptions();
 
 	const sheet = document.getElementById("date-selection-sheet");
 	sheet.style.display = "block";
@@ -398,9 +575,10 @@ function hideDateSelectionSheet() {
 // Calculate date based on period
 function calculateDateFromPeriod(period) {
 	const now = new Date();
-	const currentYear = now.getFullYear();
 
 	switch (period) {
+		case "never":
+			return null;
 		case "next-week":
 			return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 		case "next-2-weeks":
@@ -408,20 +586,122 @@ function calculateDateFromPeriod(period) {
 		case "next-month":
 			return new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
 		case "next-spring":
-			const springStart = new Date(currentYear + (now.getMonth() >= 2 ? 1 : 0), 2, 20); // March 20
-			return springStart;
+			return getNextSeasonDate("spring");
 		case "next-summer":
-			const summerStart = new Date(currentYear + (now.getMonth() >= 5 ? 1 : 0), 5, 21); // June 21
-			return summerStart;
+			return getNextSeasonDate("summer");
 		case "next-autumn":
-			const autumnStart = new Date(currentYear + (now.getMonth() >= 8 ? 1 : 0), 8, 22); // September 22
-			return autumnStart;
+			return getNextSeasonDate("autumn");
 		case "next-winter":
-			const winterStart = new Date(currentYear + (now.getMonth() >= 11 ? 1 : 0), 11, 21); // December 21
-			return winterStart;
+			return getNextSeasonDate("winter");
 		default:
 			return now;
 	}
+}
+
+// Helper function to get next season date
+function getNextSeasonDate(season) {
+	const now = new Date();
+	const currentYear = now.getFullYear();
+
+	let targetDate;
+	switch (season) {
+		case "spring":
+			targetDate = new Date(currentYear, 2, 20); // March 20
+			break;
+		case "summer":
+			targetDate = new Date(currentYear, 5, 21); // June 21
+			break;
+		case "autumn":
+			targetDate = new Date(currentYear, 8, 22); // September 22
+			break;
+		case "winter":
+			targetDate = new Date(currentYear, 11, 21); // December 21
+			break;
+		default:
+			return now;
+	}
+
+	// If the date has passed this year, use next year
+	if (targetDate <= now) {
+		targetDate = new Date(targetDate.getFullYear() + 1, targetDate.getMonth(), targetDate.getDate());
+	}
+
+	return targetDate;
+}
+
+// Populate date selection options dynamically
+function populateDateOptions() {
+	const dateOptionsContainer = document.getElementById("date-options");
+
+	// Clear existing options
+	dateOptionsContainer.innerHTML = "";
+
+	// Get current season and build options in correct order
+	const currentSeason = getCurrentSeason();
+	const seasons = ["spring", "summer", "autumn", "winter"];
+	const currentSeasonIndex = seasons.indexOf(currentSeason);
+
+	// Base time options
+	const baseOptions = [
+		{ label: "Never", period: "never" },
+		{ label: "Next Week", period: "next-week" },
+		{ label: "2 Weeks", period: "next-2-weeks" },
+		{ label: "Next Month", period: "next-month" },
+	];
+
+	// Add seasonal options in correct order
+	const seasonOptions = [];
+	for (let i = 1; i <= 4; i++) {
+		const seasonIndex = (currentSeasonIndex + i) % 4;
+		const season = seasons[seasonIndex];
+		const label = `Next ${season.charAt(0).toUpperCase() + season.slice(1)}`;
+		const period = `next-${season}`;
+		seasonOptions.push({ label, period });
+	}
+
+	// Combine all options
+	const allOptions = [...baseOptions, ...seasonOptions];
+
+	// Create buttons for each option
+	allOptions.forEach((option) => {
+		const button = document.createElement("button");
+		button.className = "date-option";
+		button.setAttribute("data-period", option.period);
+		button.textContent = option.label;
+		button.addEventListener("click", (e) => {
+			const period = e.target.getAttribute("data-period");
+			handleDateSelection(period);
+		});
+		dateOptionsContainer.appendChild(button);
+	});
+}
+
+// Helper function to get current season (same logic as DateSliderControl)
+function getCurrentSeason() {
+	const now = new Date();
+	const month = now.getMonth();
+	const day = now.getDate();
+
+	// Spring: March 20 - June 20
+	if (month > 2 || (month === 2 && day >= 20)) {
+		if (month < 5 || (month === 5 && day < 21)) {
+			return "spring";
+		}
+	}
+	// Summer: June 21 - September 21
+	if (month > 5 || (month === 5 && day >= 21)) {
+		if (month < 8 || (month === 8 && day < 22)) {
+			return "summer";
+		}
+	}
+	// Autumn: September 22 - December 20
+	if (month > 8 || (month === 8 && day >= 22)) {
+		if (month < 11 || (month === 11 && day < 21)) {
+			return "autumn";
+		}
+	}
+	// Winter: December 21 - March 19
+	return "winter";
 }
 
 // Handle date selection
@@ -430,19 +710,23 @@ async function handleDateSelection(period) {
 
 	const newStartDate = calculateDateFromPeriod(period);
 
-	// Prepare update data
-	const updateData = {
-		date_to_start: newStartDate.toISOString(),
-		date_completed: taskAction === "done" ? new Date().toISOString() : null,
-	};
-
-	// Update task in database
-	const success = await updateTask(currentTaskId, updateData);
-
-	// Increment tries if marking as not done
-	if (success && taskAction === "not-done") {
-		await incrementTaskTries(currentTaskId);
+	// Map action to completion status
+	let completionStatus;
+	switch (taskAction) {
+		case "complete":
+			completionStatus = "done";
+			break;
+		case "postpone":
+			// If "never" is selected when postponing, treat as canceled
+			completionStatus = period === "never" ? "canceled" : "postponed";
+			break;
+		case "cancel":
+			completionStatus = "canceled";
+			break;
 	}
+
+	// Complete task and create new one if needed
+	const success = await completeTask(currentTaskId, completionStatus, newStartDate);
 
 	if (!success) {
 		return;
@@ -465,32 +749,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 		// Initialize map
 		initializeMap();
 
-		// Initialize date picker
-		const dateInput = document.getElementById("viewed-date");
-		const todayBtn = document.getElementById("today-btn");
-
-		// Set initial date to today
-		dateInput.value = new Date().toISOString().split("T")[0];
-
-		// Handle date change
-		dateInput.addEventListener("change", (e) => {
-			viewedDate = new Date(e.target.value);
-			// Refresh current location if open
-			if (currentLocationId) {
-				showLocationDetails(currentLocationId);
-			}
-		});
-
-		// Handle today button
-		todayBtn.addEventListener("click", () => {
-			const today = new Date();
-			viewedDate = today;
-			dateInput.value = today.toISOString().split("T")[0];
-			// Refresh current location if open
-			if (currentLocationId) {
-				showLocationDetails(currentLocationId);
-			}
-		});
+		// Date slider is now handled by the custom MapLibre control
 
 		// Add event listener for close button
 		document.getElementById("close-sidebar").addEventListener("click", () => {
@@ -519,17 +778,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 		// Add event listeners for edit task sheet
 		document.getElementById("close-edit-task-sheet").addEventListener("click", hideEditTaskSheet);
-		document.getElementById("mark-done-btn").addEventListener("click", () => showDateSelectionSheet("done"));
-		document.getElementById("mark-not-done-btn").addEventListener("click", () => showDateSelectionSheet("not-done"));
+		document.getElementById("complete-btn").addEventListener("click", () => showDateSelectionSheet("complete"));
+		document.getElementById("postpone-btn").addEventListener("click", () => showDateSelectionSheet("postpone"));
+		document.getElementById("cancel-btn").addEventListener("click", () => showDateSelectionSheet("cancel"));
 
 		// Add event listeners for date selection sheet
 		document.getElementById("close-date-selection-sheet").addEventListener("click", hideDateSelectionSheet);
-		document.querySelectorAll(".date-option").forEach((button) => {
-			button.addEventListener("click", (e) => {
-				const period = e.target.getAttribute("data-period");
-				handleDateSelection(period);
-			});
-		});
+		// Note: date option buttons are now added dynamically in populateDateOptions()
 
 		// Add escape key to close sheet
 		document.addEventListener("keydown", (e) => {

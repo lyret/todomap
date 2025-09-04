@@ -70,47 +70,65 @@ body {
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* Date picker container */
+/* Date picker container - hidden */
 .date-picker-container {
 	display: none;
-	position: fixed;
-	top: 16px;
-	right: 16px;
-	z-index: 1000;
-	background: white;
-	padding: 12px;
-	border-radius: 8px;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Date slider control */
+.date-slider-control {
+	background: #fff;
+	border-radius: 4px;
+	box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+	padding: 8px 12px;
+	min-width: 200px;
+}
+
+.date-slider-container {
 	display: flex;
+	flex-direction: column;
+	gap: 6px;
 	align-items: center;
-	gap: 8px;
 }
 
-.date-picker-container label {
-	font-size: 14px;
-	color: #333;
-	margin: 0;
-}
-
-.date-picker-container input[type="date"] {
-	border: 1px solid #ddd;
-	border-radius: 4px;
-	padding: 6px 8px;
-	font-size: 14px;
-}
-
-.today-button {
-	background: #6c757d;
-	color: white;
-	border: none;
-	border-radius: 4px;
-	padding: 6px 12px;
+.date-slider-label {
 	font-size: 12px;
-	cursor: pointer;
+	font-weight: 600;
+	color: #333;
+	text-align: center;
+	min-height: 16px;
 }
 
-.today-button:hover {
-	background: #5a6268;
+.date-slider {
+	width: 100%;
+	height: 4px;
+	background: #ddd;
+	border-radius: 2px;
+	outline: none;
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.date-slider::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 16px;
+	height: 16px;
+	background: #4caf50;
+	border-radius: 50%;
+	cursor: pointer;
+	border: 2px solid white;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.date-slider::-moz-range-thumb {
+	width: 16px;
+	height: 16px;
+	background: #4caf50;
+	border-radius: 50%;
+	cursor: pointer;
+	border: 2px solid white;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .container {
@@ -257,6 +275,24 @@ textarea {
 	border-color: #28a745;
 }
 
+.task-item.completed.postponed {
+	background: #fff3cd;
+	border-color: #ffeaa7;
+}
+
+.task-item.completed.postponed .task-title {
+	color: #fd7e14;
+}
+
+.task-item.completed.canceled {
+	background: #f8d7da;
+	border-color: #f5c6cb;
+}
+
+.task-item.completed.canceled .task-title {
+	color: #dc3545;
+}
+
 .task-content {
 	display: flex;
 	align-items: flex-start;
@@ -306,6 +342,14 @@ textarea {
 
 .status-dot.inactive {
 	color: #6c757d;
+}
+
+.status-dot.postponed {
+	color: #fd7e14;
+}
+
+.status-dot.canceled {
+	color: #dc3545;
 }
 
 /* Location marker styles */
@@ -456,6 +500,14 @@ h3 {
 	background: #5a6268;
 }
 
+.button-tertiary {
+	background: #dc3545;
+}
+
+.button-tertiary:hover {
+	background: #c82333;
+}
+
 #add-location-form textarea {
 	min-height: 80px;
 }
@@ -596,20 +648,13 @@ h3 {
 
 /* Mobile-specific styles */
 @media (max-width: 767px) {
-	.date-picker-container {
-		display: none;
-		position: fixed;
-		top: auto;
-		bottom: 16px;
-		right: 16px;
-		left: 16px;
-		flex-direction: column;
-		align-items: stretch;
-		gap: 8px;
+	.date-slider-control {
+		min-width: 180px;
+		padding: 6px 10px;
 	}
 
-	.date-picker-container label {
-		text-align: center;
+	.date-slider-label {
+		font-size: 11px;
 	}
 
 	.task-sheet {

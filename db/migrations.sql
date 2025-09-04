@@ -17,6 +17,7 @@ CREATE TABLE tasks (
     info TEXT NOT NULL,
     date_to_start TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     date_completed TIMESTAMP WITH TIME ZONE,
+    completion_status TEXT CHECK (completion_status IN ('done', 'postponed', 'canceled')),
     tries INTEGER DEFAULT 0
 );
 
