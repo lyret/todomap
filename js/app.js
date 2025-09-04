@@ -831,13 +831,22 @@ function showTaskSheet(taskId) {
 		const task = location.tasks.find((t) => t.id == taskId);
 		if (!task) return;
 
+		// Only allow editing active (yellow) or upcoming (gray) tasks
+		const taskElement = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+		const isEditableTask = taskElement && (taskElement.classList.contains("active") || taskElement.classList.contains("inactive"));
+
+		if (!isEditableTask) {
+			return; // Don't open sheet for non-editable tasks
+		}
+
 		// Update task sheet content
-		document.getElementById("task-name").textContent = task.title;
-		document.getElementById("task-description").textContent = task.description;
+		const description = task.title + (task.description ? "\n" + task.description : "");
+		document.getElementById("task-description").textContent = description;
+
 		document.getElementById("task-start-date-display").textContent = new Date(task.dateToStart).toLocaleDateString();
 		const statusText = task.completionStatus ? `${task.completionStatus.charAt(0).toUpperCase() + task.completionStatus.slice(1)}` : "Pending";
 		document.getElementById("task-status-display").textContent = statusText;
-		document.getElementById("task-tries-display").textContent = task.tries;
+		document.getElementById("task-tries-display").textContent = task.tries || "0";
 
 		// Show sheet
 		const sheet = document.getElementById("edit-task-sheet");

@@ -153,11 +153,14 @@
 
 		<!-- Edit Task Sheet -->
 		<div id="edit-task-sheet" class="task-sheet hidden">
-			<div class="sheet-content">
-				<button id="close-edit-task-sheet" class="close-button" aria-label="Close">&times;</button>
-				<div id="task-details">
-					<h3 id="task-name">Task Name</h3>
+			<div class="sheet-header">
+				<div class="task-description-container">
 					<p id="task-description">Task description...</p>
+				</div>
+				<button id="close-edit-task-sheet" class="close-button" aria-label="Close">&times;</button>
+			</div>
+			<div class="sheet-content">
+				<div id="task-details">
 					<div class="task-info">
 						<p><strong>Start Date:</strong> <span id="task-start-date-display"></span></p>
 						<p><strong>Status:</strong> <span id="task-status-display"></span></p>
