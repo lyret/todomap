@@ -36,6 +36,8 @@ const markers = new Map(); // To store markers for easy access
 let selectedCoordinates = null; // To store coordinates for new location
 let isLocationPickingMode = false; // Track if we're picking a location
 let viewedDate = new Date(); // Current viewed date for filtering tasks
+let currentTaskId = null; // Current task being edited
+let taskAction = null; // Track if marking as done or not done
 
 // Initialize map and add markers
 function initializeMap() {
@@ -129,25 +131,30 @@ function updateTasksList(location, currentViewedDate = new Date()) {
 		.map((task) => {
 			const isActive = new Date(task.dateToStart) <= currentViewedDate;
 			const taskClass = task.completed ? "completed" : isActive ? "" : "inactive";
-			const statusClass = task.completed ? "done" : isActive ? "" : "inactive";
-			const statusText = task.completed
-				? new Date(task.dateCompleted).toLocaleDateString()
-				: isActive
-					? "Pending"
-					: `Starts ${new Date(task.dateToStart).toLocaleDateString()}`;
+
+			// Get status indicator
+			let statusIndicator = "";
+			if (task.completed) {
+				statusIndicator = `<span class="status-dot completed">✓</span>`;
+			} else if (isActive) {
+				statusIndicator = `<span class="status-dot active">●</span>`;
+			} else {
+				statusIndicator = `<span class="status-dot inactive">○</span>`;
+			}
 
 			return `
-        <div class="task-item ${taskClass}" data-task-id="${task.id}">
-            <div class="task-header">
-                <span class="task-title">${task.title}</span>
-                <span class="task-status ${statusClass}"
-                      onclick="toggleTask('${task.id}')">
-                    ${statusText}
-                    ${task.tries > 0 ? `<span class="tries">↻${task.tries}</span>` : ""}
-                </span>
+        <div class="task-item ${taskClass}" data-task-id="${task.id}" onclick="showTaskSheet('${task.id}')">
+            <div class="task-content">
+                ${statusIndicator}
+                <div class="task-text">
+                    <span class="task-title">${task.title}</span>
+                    <small class="task-meta">
+                        Start: ${new Date(task.dateToStart).toLocaleDateString()}
+                        ${task.tries > 0 ? ` • ${task.tries} tries` : ""}
+                        ${task.completed ? ` • Completed ${new Date(task.dateCompleted).toLocaleDateString()}` : ""}
+                    </small>
+                </div>
             </div>
-            <p>${task.description}</p>
-            <small>Start: ${new Date(task.dateToStart).toLocaleDateString()}</small>
         </div>
     `;
 		})
@@ -182,9 +189,8 @@ async function handleNewTaskSubmission(event) {
 
 	const addedTask = await addTask(currentLocationId, newTask);
 	if (addedTask) {
-		// Reset form
-		taskInfoInput.value = "";
-		taskStartDateInput.value = new Date().toISOString().split("T")[0];
+		// Hide sheet and reset form
+		hideTaskSheet();
 
 		// Update tasks list
 		const location = await getLocationById(currentLocationId);
@@ -285,6 +291,174 @@ async function handleLocationSubmit(event) {
 	}
 }
 
+// Show task sheet
+function showTaskSheet() {
+	if (!currentLocationId) return;
+
+	const sheet = document.getElementById("task-sheet");
+	sheet.style.display = "block";
+	sheet.offsetHeight; // Force reflow
+	sheet.classList.remove("hidden");
+
+	// Set default start date to today
+	document.getElementById("task-start-date").value = new Date().toISOString().split("T")[0];
+
+	// Focus on the first input
+	document.getElementById("task-info").focus();
+}
+
+// Hide add task sheet
+function hideTaskSheet() {
+	const sheet = document.getElementById("task-sheet");
+	sheet.classList.add("hidden");
+	sheet.addEventListener(
+		"transitionend",
+		() => {
+			if (sheet.classList.contains("hidden")) {
+				sheet.style.display = "none";
+				// Reset form
+				document.getElementById("add-task-form").reset();
+			}
+		},
+		{ once: true },
+	);
+}
+
+// Show task sheet
+function showTaskSheet(taskId) {
+	if (!currentLocationId) return;
+
+	currentTaskId = taskId;
+
+	// Get task data
+	getLocationById(currentLocationId).then((location) => {
+		const task = location.tasks.find((t) => t.id == taskId);
+		if (!task) return;
+
+		// Update task sheet content
+		document.getElementById("task-name").textContent = task.title;
+		document.getElementById("task-description").textContent = task.description;
+		document.getElementById("task-start-date-display").textContent = new Date(task.dateToStart).toLocaleDateString();
+		document.getElementById("task-status-display").textContent = task.completed ? "Completed" : "Pending";
+		document.getElementById("task-tries-display").textContent = task.tries;
+
+		// Show sheet
+		const sheet = document.getElementById("edit-task-sheet");
+		sheet.style.display = "block";
+		sheet.offsetHeight; // Force reflow
+		sheet.classList.remove("hidden");
+	});
+}
+
+// Hide edit task sheet
+function hideEditTaskSheet() {
+	const sheet = document.getElementById("edit-task-sheet");
+	sheet.classList.add("hidden");
+	sheet.addEventListener(
+		"transitionend",
+		() => {
+			if (sheet.classList.contains("hidden")) {
+				sheet.style.display = "none";
+				currentTaskId = null;
+			}
+		},
+		{ once: true },
+	);
+}
+
+// Show date selection sheet
+function showDateSelectionSheet(action) {
+	taskAction = action;
+
+	const title = action === "done" ? "Mark as Done - When to restart?" : "Postpone - When to start?";
+	document.getElementById("date-selection-title").textContent = title;
+
+	const sheet = document.getElementById("date-selection-sheet");
+	sheet.style.display = "block";
+	sheet.offsetHeight; // Force reflow
+	sheet.classList.remove("hidden");
+}
+
+// Hide date selection sheet
+function hideDateSelectionSheet() {
+	const sheet = document.getElementById("date-selection-sheet");
+	sheet.classList.add("hidden");
+	sheet.addEventListener(
+		"transitionend",
+		() => {
+			if (sheet.classList.contains("hidden")) {
+				sheet.style.display = "none";
+				taskAction = null;
+			}
+		},
+		{ once: true },
+	);
+}
+
+// Calculate date based on period
+function calculateDateFromPeriod(period) {
+	const now = new Date();
+	const currentYear = now.getFullYear();
+
+	switch (period) {
+		case "next-week":
+			return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+		case "next-2-weeks":
+			return new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+		case "next-month":
+			return new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+		case "next-spring":
+			const springStart = new Date(currentYear + (now.getMonth() >= 2 ? 1 : 0), 2, 20); // March 20
+			return springStart;
+		case "next-summer":
+			const summerStart = new Date(currentYear + (now.getMonth() >= 5 ? 1 : 0), 5, 21); // June 21
+			return summerStart;
+		case "next-autumn":
+			const autumnStart = new Date(currentYear + (now.getMonth() >= 8 ? 1 : 0), 8, 22); // September 22
+			return autumnStart;
+		case "next-winter":
+			const winterStart = new Date(currentYear + (now.getMonth() >= 11 ? 1 : 0), 11, 21); // December 21
+			return winterStart;
+		default:
+			return now;
+	}
+}
+
+// Handle date selection
+async function handleDateSelection(period) {
+	if (!currentTaskId || !taskAction) return;
+
+	const newStartDate = calculateDateFromPeriod(period);
+
+	// Prepare update data
+	const updateData = {
+		date_to_start: newStartDate.toISOString(),
+		date_completed: taskAction === "done" ? new Date().toISOString() : null,
+	};
+
+	// Update task in database
+	const success = await updateTask(currentTaskId, updateData);
+
+	// Increment tries if marking as not done
+	if (success && taskAction === "not-done") {
+		await incrementTaskTries(currentTaskId);
+	}
+
+	if (!success) {
+		return;
+	}
+
+	// Close all sheets and refresh
+	hideDateSelectionSheet();
+	hideEditTaskSheet();
+
+	// Refresh location view
+	if (currentLocationId) {
+		const location = await getLocationById(currentLocationId);
+		updateTasksList(location, viewedDate);
+	}
+}
+
 // Event listeners
 document.addEventListener("DOMContentLoaded", async () => {
 	try {
@@ -338,10 +512,61 @@ document.addEventListener("DOMContentLoaded", async () => {
 		// Add event listener for new task form
 		document.getElementById("add-task-form").addEventListener("submit", handleNewTaskSubmission);
 
+		// Add event listeners for add task sheet
+		document.getElementById("add-task-btn").addEventListener("click", showTaskSheet);
+		document.getElementById("close-task-sheet").addEventListener("click", hideTaskSheet);
+		document.getElementById("cancel-task").addEventListener("click", hideTaskSheet);
+
+		// Add event listeners for edit task sheet
+		document.getElementById("close-edit-task-sheet").addEventListener("click", hideEditTaskSheet);
+		document.getElementById("mark-done-btn").addEventListener("click", () => showDateSelectionSheet("done"));
+		document.getElementById("mark-not-done-btn").addEventListener("click", () => showDateSelectionSheet("not-done"));
+
+		// Add event listeners for date selection sheet
+		document.getElementById("close-date-selection-sheet").addEventListener("click", hideDateSelectionSheet);
+		document.querySelectorAll(".date-option").forEach((button) => {
+			button.addEventListener("click", (e) => {
+				const period = e.target.getAttribute("data-period");
+				handleDateSelection(period);
+			});
+		});
+
+		// Add escape key to close sheet
+		document.addEventListener("keydown", (e) => {
+			if (e.key === "Escape") {
+				const taskSheet = document.getElementById("task-sheet");
+				const editTaskSheet = document.getElementById("edit-task-sheet");
+				const dateSelectionSheet = document.getElementById("date-selection-sheet");
+
+				if (!dateSelectionSheet.classList.contains("hidden")) {
+					hideDateSelectionSheet();
+				} else if (!editTaskSheet.classList.contains("hidden")) {
+					hideEditTaskSheet();
+				} else if (!taskSheet.classList.contains("hidden")) {
+					hideTaskSheet();
+				}
+			}
+		});
+
 		// Initialize sidebar state
 		const sidebar = document.getElementById("sidebar");
 		sidebar.style.display = "none";
 		sidebar.classList.add("hidden");
+
+		// Initialize task sheet state
+		const taskSheet = document.getElementById("task-sheet");
+		taskSheet.style.display = "none";
+		taskSheet.classList.add("hidden");
+
+		// Initialize edit task sheet state
+		const editTaskSheet = document.getElementById("edit-task-sheet");
+		editTaskSheet.style.display = "none";
+		editTaskSheet.classList.add("hidden");
+
+		// Initialize date selection sheet state
+		const dateSelectionSheet = document.getElementById("date-selection-sheet");
+		dateSelectionSheet.style.display = "none";
+		dateSelectionSheet.classList.add("hidden");
 
 		// Set default start date for new tasks to today
 		document.getElementById("task-start-date").value = new Date().toISOString().split("T")[0];

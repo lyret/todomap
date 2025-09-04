@@ -5,7 +5,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="translucent" />
-		<title></title>Garden Maintenance Map</title>
+		<title>Småhusbyn Skötselplanering</title>
 
 		<!-- MapLibre GL JS -->
 		<script src="https://unpkg.com/maplibre-gl@3.3.1/dist/maplibre-gl.js"></script>
@@ -37,22 +37,12 @@
 				</div>
 				<div class="sidebar-content">
 					<div id="location-details">
-
 						<div id="location-info"></div>
-
 
 						<div id="tasks-list"></div>
 
 						<div class="add-task-section">
-							<h3>Add New Task</h3>
-							<form id="add-task-form">
-								<textarea id="task-info" placeholder="Enter task info (first line will be the title)" required rows="4"></textarea>
-								<div class="form-group">
-									<label for="task-start-date">Start Date:</label>
-									<input type="date" id="task-start-date" />
-								</div>
-								<button type="submit" class="button">Add Task</button>
-							</form>
+							<button id="add-task-btn" class="button add-task-button">+ Add New Task</button>
 						</div>
 					</div>
 				</div>
@@ -83,7 +73,12 @@
 
 					<div class="form-group">
 						<label for="location-info">Location Information</label>
-						<textarea id="location-info" required rows="6" placeholder="Enter information about this location.&#10;&#10;You can use:&#10;**bold text**&#10;![Image description](image-url)&#10;&#10;Line breaks will be preserved."></textarea>
+						<textarea
+							id="location-info"
+							required
+							rows="6"
+							placeholder="Enter information about this location.&#10;&#10;You can use:&#10;**bold text**&#10;![Image description](image-url)&#10;&#10;Line breaks will be preserved."
+						></textarea>
 					</div>
 
 					<div class="form-actions">
@@ -91,6 +86,82 @@
 						<button type="button" class="button button-secondary" id="cancel-location">Cancel</button>
 					</div>
 				</form>
+			</div>
+			<div class="safe-area-bottom"></div>
+		</div>
+
+		<!-- Add Task Sheet -->
+		<div id="task-sheet" class="task-sheet hidden">
+			<div class="sheet-header">
+				<div>
+					<h2>Add New Task</h2>
+				</div>
+				<button id="close-task-sheet" class="close-button" aria-label="Close">&times;</button>
+			</div>
+			<div class="sheet-content">
+				<form id="add-task-form">
+					<div class="form-group">
+						<label for="task-info">Task Information</label>
+						<textarea id="task-info" placeholder="Enter task info (first line will be the title)" required rows="4"></textarea>
+					</div>
+					<div class="form-group">
+						<label for="task-start-date">Start Date:</label>
+						<input type="date" id="task-start-date" />
+					</div>
+					<div class="form-actions">
+						<button type="submit" class="button">Add Task</button>
+						<button type="button" class="button button-secondary" id="cancel-task">Cancel</button>
+					</div>
+				</form>
+			</div>
+			<div class="safe-area-bottom"></div>
+		</div>
+
+		<!-- Edit Task Sheet -->
+		<div id="edit-task-sheet" class="task-sheet hidden">
+			<div class="sheet-header">
+				<div>
+					<h2 id="edit-task-title">Edit Task</h2>
+				</div>
+				<button id="close-edit-task-sheet" class="close-button" aria-label="Close">&times;</button>
+			</div>
+			<div class="sheet-content">
+				<div id="task-details">
+					<h3 id="task-name">Task Name</h3>
+					<p id="task-description">Task description...</p>
+					<div class="task-info">
+						<p><strong>Start Date:</strong> <span id="task-start-date-display"></span></p>
+						<p><strong>Status:</strong> <span id="task-status-display"></span></p>
+						<p><strong>Tries:</strong> <span id="task-tries-display"></span></p>
+					</div>
+				</div>
+				<div class="form-actions">
+					<button type="button" class="button" id="mark-done-btn">Mark as Done</button>
+					<button type="button" class="button button-secondary" id="mark-not-done-btn">Postpone</button>
+					<button type="button" class="button button-secondary">Close</button>
+				</div>
+			</div>
+			<div class="safe-area-bottom"></div>
+		</div>
+
+		<!-- Date Selection Sheet -->
+		<div id="date-selection-sheet" class="task-sheet hidden">
+			<div class="sheet-header">
+				<div>
+					<h2 id="date-selection-title">Select When to Start</h2>
+				</div>
+				<button id="close-date-selection-sheet" class="close-button" aria-label="Close">&times;</button>
+			</div>
+			<div class="sheet-content">
+				<div class="date-options">
+					<button class="date-option" data-period="next-week">Next Week</button>
+					<button class="date-option" data-period="next-2-weeks">Next 2 Weeks</button>
+					<button class="date-option" data-period="next-month">Next Month</button>
+					<button class="date-option" data-period="next-spring">Next Spring</button>
+					<button class="date-option" data-period="next-summer">Next Summer</button>
+					<button class="date-option" data-period="next-autumn">Next Autumn</button>
+					<button class="date-option" data-period="next-winter">Next Winter</button>
+				</div>
 			</div>
 			<div class="safe-area-bottom"></div>
 		</div>

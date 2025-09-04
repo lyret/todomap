@@ -163,6 +163,40 @@ async function addLocation(locationData) {
 	};
 }
 
+// Function to update task with new start date and completion status
+async function updateTask(taskId, updateData) {
+	const { error } = await supabase.from("tasks").update(updateData).eq("id", taskId);
+
+	if (error) {
+		console.error("Error updating task:", error);
+		return false;
+	}
+
+	return true;
+}
+
+// Function to increment task tries
+async function incrementTaskTries(taskId) {
+	const { data: currentTask, error: fetchError } = await supabase.from("tasks").select("tries").eq("id", taskId).single();
+
+	if (fetchError) {
+		console.error("Error fetching task:", fetchError);
+		return false;
+	}
+
+	const { error: updateError } = await supabase
+		.from("tasks")
+		.update({ tries: currentTask.tries + 1 })
+		.eq("id", taskId);
+
+	if (updateError) {
+		console.error("Error updating task tries:", updateError);
+		return false;
+	}
+
+	return true;
+}
+
 // Function to filter active tasks based on viewed date
 function filterActiveTasks(tasks, viewedDate = new Date()) {
 	return tasks.filter((task) => new Date(task.dateToStart) <= viewedDate);
