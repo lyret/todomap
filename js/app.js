@@ -453,22 +453,6 @@ async function handleLocationSubmit(event) {
 	}
 }
 
-// Show task sheet
-function showTaskSheet() {
-	if (!currentLocationId) return;
-
-	const sheet = document.getElementById("task-sheet");
-	sheet.style.display = "block";
-	sheet.offsetHeight; // Force reflow
-	sheet.classList.remove("hidden");
-
-	// Set default start date to today
-	document.getElementById("task-start-date").value = new Date().toISOString().split("T")[0];
-
-	// Focus on the first input
-	document.getElementById("task-info").focus();
-}
-
 // Hide add task sheet
 function hideTaskSheet() {
 	const sheet = document.getElementById("task-sheet");
@@ -484,6 +468,22 @@ function hideTaskSheet() {
 		},
 		{ once: true },
 	);
+}
+
+// Show add task sheet
+function showAddTaskSheet() {
+	if (!currentLocationId) return;
+
+	const sheet = document.getElementById("task-sheet");
+	sheet.style.display = "block";
+	sheet.offsetHeight; // Force reflow
+	sheet.classList.remove("hidden");
+
+	// Set default start date to today
+	document.getElementById("task-start-date").value = new Date().toISOString().split("T")[0];
+
+	// Focus on the first input
+	document.getElementById("task-info").focus();
 }
 
 // Show task sheet
@@ -772,7 +772,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 		document.getElementById("add-task-form").addEventListener("submit", handleNewTaskSubmission);
 
 		// Add event listeners for add task sheet
-		document.getElementById("add-task-btn").addEventListener("click", showTaskSheet);
+		document.getElementById("add-task-btn").addEventListener("click", showAddTaskSheet);
 		document.getElementById("close-task-sheet").addEventListener("click", hideTaskSheet);
 		document.getElementById("cancel-task").addEventListener("click", hideTaskSheet);
 

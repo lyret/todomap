@@ -145,7 +145,7 @@ body {
 
 /* Sidebar styles */
 .sidebar {
-	width: 400px;
+	width: var(--sheet-width);
 	height: 100vh;
 	background: white;
 	position: fixed;
@@ -399,13 +399,13 @@ h3 {
 /* Location sheet styles */
 .location-sheet {
 	position: fixed;
-	left: 0;
+	right: 0;
 	top: 0;
 	bottom: 0;
 	width: var(--sheet-width);
 	height: 100%;
 	background: white;
-	box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+	box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
 	transition: transform 0.3s ease-in-out;
 	overflow-y: auto;
 	z-index: 3000;
@@ -416,7 +416,7 @@ h3 {
 }
 
 .location-sheet.hidden {
-	transform: translateX(-100%);
+	transform: translateX(100%);
 }
 
 .sheet-header {
@@ -529,7 +529,7 @@ h3 {
 	background: #45a049;
 }
 
-/* Task Sheet */
+/* Task Sheet (left side) */
 .task-sheet {
 	position: fixed;
 	left: 0;
@@ -550,6 +550,18 @@ h3 {
 
 .task-sheet.hidden {
 	transform: translateX(-100%);
+}
+
+/* Date selection sheet (right side) */
+#date-selection-sheet {
+	right: 0;
+	left: auto;
+	box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+	z-index: 5000;
+}
+
+#date-selection-sheet.hidden {
+	transform: translateX(100%);
 }
 
 /* Task details styling */
@@ -663,8 +675,11 @@ h3 {
 		max-height: 70vh;
 		bottom: 0;
 		top: auto;
+		left: 0;
+		right: auto;
 		transform: translateY(0);
 		border-radius: 20px 20px 0 0;
+		box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
 	}
 
 	.task-sheet.hidden {
@@ -673,6 +688,16 @@ h3 {
 
 	.task-sheet .sheet-header {
 		border-radius: 20px 20px 0 0;
+	}
+
+	#date-selection-sheet {
+		right: auto;
+		left: 0;
+		box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+	}
+
+	#date-selection-sheet.hidden {
+		transform: translateY(100%);
 	}
 
 	.date-options {
