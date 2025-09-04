@@ -103,25 +103,10 @@ async function showLocationDetails(locationId) {
 	// Update sidebar title
 	document.getElementById("location-title").textContent = location.name;
 
-	// Update location info
+	// Update location info with markdown rendering
 	const locationInfoHtml = `
         <div class="location-info">
-            <p>${location.info.text}</p>
-            ${
-				location.info.images && location.info.images.length > 0
-					? `<div class="location-images">
-                    ${location.info.images
-						.map(
-							(img) =>
-								`<figure>
-                            <img src="${img.url}" alt="${img.caption || ""}" />
-                            ${img.caption ? `<figcaption>${img.caption}</figcaption>` : ""}
-                        </figure>`,
-						)
-						.join("")}
-                   </div>`
-					: ""
-			}
+            ${renderMarkdown(location.info)}
         </div>
     `;
 	document.getElementById("location-info").innerHTML = locationInfoHtml;
@@ -147,12 +132,11 @@ function updateTasksList(location) {
                 <span class="task-title">${task.title}</span>
                 <span class="task-status ${task.completed ? "done" : ""}"
                       onclick="toggleTask('${task.id}')">
-                    ${task.completed ? new Date(task.dateCompleted).toLocaleDateString() : "Pending"}
-                    ${task.tries > 0 ? `<span class="tries">↻${task.tries}</span>` : ""}
-                </span>
+                    ${task.completed ? "Done" : "Pending"}
+                </span>""
             </div>
             <p>${task.description}</p>
-            <small>Added: ${new Date(task.dateAdded).toLocaleDateString()}</small>
+            <small>Added: ${task.dateAdded}</small>
         </div>
     `,
 		)
@@ -175,18 +159,19 @@ async function handleNewTaskSubmission(event) {
 
 	if (!currentLocationId) return;
 
-	const taskInfoInput = document.getElementById("task-info");
-	const infoLines = taskInfoInput.value.split("\n");
+	const titleInput = document.getElementById("task-title");
+	const descriptionInput = document.getElementById("task-description");
 
 	const newTask = {
-		title: infoLines[0],
-		description: infoLines.slice(1).join("\n"),
+		title: titleInput.value,
+		description: descriptionInput.value,
 	};
 
 	const addedTask = await addTask(currentLocationId, newTask);
 	if (addedTask) {
 		// Reset form
-		taskInfoInput.value = "";
+		titleInput.value = "";
+		descriptionInput.value = "";
 
 		// Update tasks list
 		const location = await getLocationById(currentLocationId);
@@ -256,10 +241,7 @@ async function handleLocationSubmit(event) {
 	const locationData = {
 		name: document.getElementById("location-name").value,
 		coordinates: selectedCoordinates,
-		info: {
-			text: document.getElementById("location-info").value,
-			images: [],
-		},
+		info: document.getElementById("location-info").value,
 	};
 
 	const newLocation = await addLocation(locationData);
@@ -366,6 +348,46 @@ document.addEventListener("DOMContentLoaded", async () => {
 		{ passive: false },
 	);
 });
+
+// Simple markdown renderer
+function renderMarkdown(text) {
+	if (!text) return "";
+
+	return (
+		text
+			// Bold text
+			.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+			// Images with alt text
+			.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="markdown-image" />')
+			// Line breaks
+			.replace(/\n\n/g, "</p><p>")
+			// Single line breaks
+			.replace(/\n/g, "<br>")
+			// Wrap in paragraph
+			.replace(/^/, "<p>")
+			.replace(/$/, "</p>")
+	);
+}
+
+// Simple markdown renderer
+function renderMarkdown(text) {
+	if (!text) return "";
+
+	return (
+		text
+			// Bold text
+			.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+			// Images with alt text
+			.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="markdown-image" />')
+			// Line breaks
+			.replace(/\n\n/g, "</p><p>")
+			// Single line breaks
+			.replace(/\n/g, "<br>")
+			// Wrap in paragraph
+			.replace(/^/, "<p>")
+			.replace(/$/, "</p>")
+	);
+}
 
 // Add map load event listener
 map.on("load", () => {

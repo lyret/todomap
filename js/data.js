@@ -137,18 +137,6 @@ function parseTextareaLines(text) {
 
 // Function to add a new location
 async function addLocation(locationData) {
-	// Format the maintenance info
-	const maintenanceInfo = {
-		description: locationData.description,
-		care: parseTextareaLines(locationData.care),
-		seasonalTasks: {
-			spring: parseTextareaLines(locationData.seasonalTasks.spring),
-			summer: parseTextareaLines(locationData.seasonalTasks.summer),
-			fall: parseTextareaLines(locationData.seasonalTasks.fall),
-			winter: parseTextareaLines(locationData.seasonalTasks.winter),
-		},
-	};
-
 	// Insert the new location
 	const { data, error } = await supabase
 		.from("locations")
@@ -156,7 +144,7 @@ async function addLocation(locationData) {
 			{
 				name: locationData.name,
 				coordinates: locationData.coordinates,
-				maintenance_info: maintenanceInfo,
+				info: locationData.info,
 			},
 		])
 		.select()
@@ -169,6 +157,6 @@ async function addLocation(locationData) {
 
 	return {
 		...data,
-		maintenanceInfo: data.maintenance_info,
+		tasks: [],
 	};
 }
