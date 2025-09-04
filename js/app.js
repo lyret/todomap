@@ -184,6 +184,7 @@ let isLocationPickingMode = false; // Track if we're picking a location
 let viewedDate = new Date(); // Current viewed date for filtering tasks
 let currentTaskId = null; // Current task being edited
 let taskAction = null; // Track if marking as done or not done
+let taskFilter = "active"; // Current task filter: "active" or "all"
 
 // Initialize map and add markers
 function initializeMap() {
@@ -274,11 +275,30 @@ async function showLocationDetails(locationId) {
 
 // Update tasks list
 function updateTasksList(location, currentViewedDate = new Date()) {
-	const tasksHtml = location.tasks
+	// Filter tasks based on current filter
+	let filteredTasks = location.tasks;
+	if (taskFilter === "active") {
+		filteredTasks = location.tasks.filter((task) => !task.completionStatus);
+	}
+
+	const tasksHtml = filteredTasks
 		.map((task) => {
 			const isActive = new Date(task.dateToStart) <= currentViewedDate;
 			const hasCompletionStatus = task.completionStatus;
-			const taskClass = hasCompletionStatus ? "completed" : isActive ? "" : "inactive";
+
+			// Determine task class based on status
+			let taskClass = "";
+			if (hasCompletionStatus) {
+				if (task.completionStatus === "done") {
+					taskClass = "completed";
+				} else {
+					taskClass = task.completionStatus; // "postponed" or "canceled"
+				}
+			} else if (isActive) {
+				taskClass = "active";
+			} else {
+				taskClass = "inactive";
+			}
 
 			// Get status indicator
 			let statusIndicator = "";
@@ -750,6 +770,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 		initializeMap();
 
 		// Date slider is now handled by the custom MapLibre control
+
+		// Add event listeners for task filter tabs
+		document.querySelectorAll(".tab-button").forEach((button) => {
+			button.addEventListener("click", (e) => {
+				const filter = e.target.getAttribute("data-filter");
+
+				// Update active tab
+				document.querySelectorAll(".tab-button").forEach((btn) => btn.classList.remove("active"));
+				e.target.classList.add("active");
+
+				// Update filter and refresh tasks
+				taskFilter = filter;
+				if (currentLocationId) {
+					getLocationById(currentLocationId).then((location) => {
+						updateTasksList(location, viewedDate);
+					});
+				}
+			});
+		});
 
 		// Add event listener for close button
 		document.getElementById("close-sidebar").addEventListener("click", () => {

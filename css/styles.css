@@ -248,7 +248,7 @@ textarea {
 
 .task-item.inactive {
 	opacity: 0.7;
-	background: #f8f9fa;
+	background: #f1f3f4;
 	border-color: #e9ecef;
 }
 
@@ -261,36 +261,60 @@ textarea {
 	border-color: #6c757d;
 }
 
+.task-item.active {
+	background: #d1ecf1;
+	border-color: #bee5eb;
+}
+
+.task-item.active .task-title {
+	color: #0c5460;
+}
+
+.task-item.active:hover {
+	background: #bee5eb;
+	border-color: #17a2b8;
+}
+
 .task-item.completed {
-	background: #f0f8f0;
-	border-color: #c3e6c3;
+	background: #e8f5e9;
+	border-color: #c3e6cb;
 }
 
 .task-item.completed .task-title {
-	color: #28a745;
+	color: #155724;
 }
 
 .task-item.completed:hover {
-	background: #e8f5e8;
+	background: #d4edda;
 	border-color: #28a745;
 }
 
-.task-item.completed.postponed {
+.task-item.postponed {
 	background: #fff3cd;
 	border-color: #ffeaa7;
 }
 
-.task-item.completed.postponed .task-title {
-	color: #fd7e14;
+.task-item.postponed .task-title {
+	color: #856404;
 }
 
-.task-item.completed.canceled {
+.task-item.postponed:hover {
+	background: #ffeaa7;
+	border-color: #fd7e14;
+}
+
+.task-item.canceled {
 	background: #f8d7da;
 	border-color: #f5c6cb;
 }
 
-.task-item.completed.canceled .task-title {
-	color: #dc3545;
+.task-item.canceled .task-title {
+	color: #721c24;
+}
+
+.task-item.canceled:hover {
+	background: #f5c6cb;
+	border-color: #dc3545;
 }
 
 .task-content {
@@ -337,7 +361,7 @@ textarea {
 }
 
 .status-dot.active {
-	color: #4caf50;
+	color: #17a2b8;
 }
 
 .status-dot.inactive {
@@ -394,6 +418,35 @@ textarea {
 h3 {
 	margin: 20px 0 10px 0;
 	color: #333;
+}
+
+/* Task filter tabs */
+.task-filter-tabs {
+	display: flex;
+	margin: 0 0 15px 0;
+	border-bottom: 1px solid #e9ecef;
+}
+
+.tab-button {
+	background: none;
+	border: none;
+	padding: 10px 20px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 500;
+	color: #6c757d;
+	border-bottom: 2px solid transparent;
+	transition: all 0.2s ease;
+}
+
+.tab-button:hover {
+	color: #495057;
+	background: #f8f9fa;
+}
+
+.tab-button.active {
+	color: #4caf50;
+	border-bottom-color: #4caf50;
 }
 
 /* Location sheet styles */
@@ -515,7 +568,7 @@ h3 {
 /* Add task button */
 .add-task-button {
 	width: 100%;
-	background: #4caf50;
+	background: #17a2b8;
 	border: none;
 	border-radius: 8px;
 	padding: 12px;
@@ -526,7 +579,7 @@ h3 {
 }
 
 .add-task-button:hover {
-	background: #45a049;
+	background: #138496;
 }
 
 /* Task Sheet (left side) */
