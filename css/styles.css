@@ -378,7 +378,6 @@ textarea {
 
 /* Location marker styles */
 .marker {
-	background-color: #ff3b30;
 	border-radius: 50%;
 	cursor: pointer;
 	width: 24px;
@@ -401,10 +400,26 @@ textarea {
 	border-radius: 50%;
 }
 
-.marker:hover {
-	background-color: #ff635c;
+/* Marker with active tasks (blue) */
+.marker-active {
+	background-color: #17a2b8;
+}
+
+.marker-active:hover {
+	background-color: #138496;
 	transform: scale(1.2);
-	box-shadow: 0 0 12px rgba(255, 59, 48, 0.6);
+	box-shadow: 0 0 12px rgba(23, 162, 184, 0.6);
+}
+
+/* Marker with no active tasks (green) */
+.marker-no-tasks {
+	background-color: #28a745;
+}
+
+.marker-no-tasks:hover {
+	background-color: #218838;
+	transform: scale(1.2);
+	box-shadow: 0 0 12px rgba(40, 167, 69, 0.6);
 }
 
 /* Maintenance info styles */
@@ -430,13 +445,15 @@ h3 {
 .tab-button {
 	background: none;
 	border: none;
-	padding: 10px 20px;
+	padding: 8px 16px;
 	cursor: pointer;
-	font-size: 14px;
+	font-size: 13px;
 	font-weight: 500;
 	color: #6c757d;
 	border-bottom: 2px solid transparent;
 	transition: all 0.2s ease;
+	flex: 1;
+	text-align: center;
 }
 
 .tab-button:hover {
@@ -445,8 +462,8 @@ h3 {
 }
 
 .tab-button.active {
-	color: #4caf50;
-	border-bottom-color: #4caf50;
+	color: #17a2b8;
+	border-bottom-color: #17a2b8;
 }
 
 /* Location sheet styles */

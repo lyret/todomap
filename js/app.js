@@ -61,6 +61,9 @@ class DateSliderControl {
 			// Update global viewed date
 			viewedDate = newDate;
 
+			// Update marker colors based on new date
+			updateMarkerColors();
+
 			// Refresh current location if open
 			if (currentLocationId) {
 				showLocationDetails(currentLocationId);
@@ -184,7 +187,7 @@ let isLocationPickingMode = false; // Track if we're picking a location
 let viewedDate = new Date(); // Current viewed date for filtering tasks
 let currentTaskId = null; // Current task being edited
 let taskAction = null; // Track if marking as done or not done
-let taskFilter = "active"; // Current task filter: "active" or "all"
+let taskFilter = "active"; // Current task filter: "active", "upcoming", or "history"
 
 // Initialize map and add markers
 function initializeMap() {
@@ -218,7 +221,12 @@ function initializeMap() {
 			locations.forEach((location) => {
 				// Create marker element
 				const el = document.createElement("div");
-				el.className = "marker";
+
+				// Check if location has active tasks
+				const hasActiveTasks = location.tasks.some((task) => !task.completionStatus && new Date(task.dateToStart) <= viewedDate);
+
+				// Set marker class based on active tasks
+				el.className = hasActiveTasks ? "marker marker-active" : "marker marker-no-tasks";
 
 				// Create the marker with configuration
 				const marker = new maplibregl.Marker({
@@ -242,6 +250,22 @@ function initializeMap() {
 		.catch((error) => {
 			console.error("Error loading locations:", error);
 		});
+}
+
+// Function to update marker colors based on active tasks
+async function updateMarkerColors() {
+	const locations = await getLocations();
+
+	locations.forEach((location) => {
+		const marker = markers.get(location.id);
+		if (marker) {
+			const el = marker.getElement();
+			const hasActiveTasks = location.tasks.some((task) => !task.completionStatus && new Date(task.dateToStart) <= viewedDate);
+
+			// Update marker class
+			el.className = hasActiveTasks ? "marker marker-active" : "marker marker-no-tasks";
+		}
+	});
 }
 
 // Show location details in sidebar
@@ -277,8 +301,18 @@ async function showLocationDetails(locationId) {
 function updateTasksList(location, currentViewedDate = new Date()) {
 	// Filter tasks based on current filter
 	let filteredTasks = location.tasks;
+
 	if (taskFilter === "active") {
-		filteredTasks = location.tasks.filter((task) => !task.completionStatus);
+		// Show only tasks without completion status that are active (startable)
+		filteredTasks = location.tasks.filter((task) => !task.completionStatus && new Date(task.dateToStart) <= currentViewedDate);
+	} else if (taskFilter === "upcoming") {
+		// Show only tasks without completion status that are not yet startable, sorted by start date (earliest first)
+		filteredTasks = location.tasks
+			.filter((task) => !task.completionStatus && new Date(task.dateToStart) > currentViewedDate)
+			.sort((a, b) => new Date(a.dateToStart) - new Date(b.dateToStart));
+	} else if (taskFilter === "history") {
+		// Show only completed tasks, sorted by completion date (latest first)
+		filteredTasks = location.tasks.filter((task) => task.completionStatus).sort((a, b) => new Date(b.dateCompleted) - new Date(a.dateCompleted));
 	}
 
 	const tasksHtml = filteredTasks
@@ -377,6 +411,9 @@ async function handleNewTaskSubmission(event) {
 		// Update tasks list
 		const location = await getLocationById(currentLocationId);
 		updateTasksList(location, viewedDate);
+
+		// Update marker colors since new task was added
+		updateMarkerColors();
 	}
 }
 
@@ -499,8 +536,8 @@ function showAddTaskSheet() {
 	sheet.offsetHeight; // Force reflow
 	sheet.classList.remove("hidden");
 
-	// Set default start date to today
-	document.getElementById("task-start-date").value = new Date().toISOString().split("T")[0];
+	// Set default start date to current viewed date from slider
+	document.getElementById("task-start-date").value = viewedDate.toISOString().split("T")[0];
 
 	// Focus on the first input
 	document.getElementById("task-info").focus();
@@ -761,6 +798,9 @@ async function handleDateSelection(period) {
 		const location = await getLocationById(currentLocationId);
 		updateTasksList(location, viewedDate);
 	}
+
+	// Update marker colors since task status changed
+	updateMarkerColors();
 }
 
 // Event listeners
@@ -862,8 +902,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 		dateSelectionSheet.style.display = "none";
 		dateSelectionSheet.classList.add("hidden");
 
-		// Set default start date for new tasks to today
-		document.getElementById("task-start-date").value = new Date().toISOString().split("T")[0];
+		// Set default start date for new tasks to current viewed date
+		document.getElementById("task-start-date").value = viewedDate.toISOString().split("T")[0];
 	} catch (error) {
 		console.error("Error initializing application:", error);
 	}
