@@ -1,3 +1,25 @@
+// Custom control for adding locations
+class AddLocationControl {
+	onAdd(map) {
+		this._map = map;
+		this._container = document.createElement("div");
+		this._container.className = "maplibregl-ctrl maplibregl-ctrl-group";
+		this._button = document.createElement("button");
+		this._button.type = "button";
+		this._button.className = "add-location-control";
+		this._button.setAttribute("aria-label", "Add Location");
+		this._button.innerHTML = "<span>✿</span>";
+		this._button.addEventListener("click", () => showLocationSheet());
+		this._container.appendChild(this._button);
+		return this._container;
+	}
+
+	onRemove() {
+		this._container.parentNode.removeChild(this._container);
+		this._map = undefined;
+	}
+}
+
 // Initialize map
 let map = new maplibregl.Map({
 	container: "map",
@@ -16,8 +38,9 @@ let isLocationPickingMode = false; // Track if we're picking a location
 
 // Initialize map and add markers
 function initializeMap() {
-	// Add navigation controls
+	// Add navigation and location controls
 	map.addControl(new maplibregl.NavigationControl());
+	map.addControl(new AddLocationControl(), "top-right");
 
 	// Add scale control
 	map.addControl(
@@ -80,26 +103,28 @@ async function showLocationDetails(locationId) {
 	// Update sidebar title
 	document.getElementById("location-title").textContent = location.name;
 
-	// Update maintenance info
-	const maintenanceHtml = `
-        <p>${location.maintenanceInfo.description}</p>
-        <h4>General Care:</h4>
-        <ul>
-            ${location.maintenanceInfo.care.map((item) => `<li>${item}</li>`).join("")}
-        </ul>
-        <h4>Seasonal Tasks:</h4>
-        ${Object.entries(location.maintenanceInfo.seasonalTasks)
-			.map(
-				([season, tasks]) => `
-            <h5>${season.charAt(0).toUpperCase() + season.slice(1)}:</h5>
-            <ul>
-                ${tasks.map((task) => `<li>${task}</li>`).join("")}
-            </ul>
-        `,
-			)
-			.join("")}
+	// Update location info
+	const locationInfoHtml = `
+        <div class="location-info">
+            <p>${location.info.text}</p>
+            ${
+				location.info.images && location.info.images.length > 0
+					? `<div class="location-images">
+                    ${location.info.images
+						.map(
+							(img) =>
+								`<figure>
+                            <img src="${img.url}" alt="${img.caption || ""}" />
+                            ${img.caption ? `<figcaption>${img.caption}</figcaption>` : ""}
+                        </figure>`,
+						)
+						.join("")}
+                   </div>`
+					: ""
+			}
+        </div>
     `;
-	document.getElementById("maintenance-info").innerHTML = maintenanceHtml;
+	document.getElementById("location-info").innerHTML = locationInfoHtml;
 
 	// Update tasks list
 	updateTasksList(location);
@@ -122,11 +147,12 @@ function updateTasksList(location) {
                 <span class="task-title">${task.title}</span>
                 <span class="task-status ${task.completed ? "done" : ""}"
                       onclick="toggleTask('${task.id}')">
-                    ${task.completed ? "Done" : "Pending"}
+                    ${task.completed ? new Date(task.dateCompleted).toLocaleDateString() : "Pending"}
+                    ${task.tries > 0 ? `<span class="tries">↻${task.tries}</span>` : ""}
                 </span>
             </div>
             <p>${task.description}</p>
-            <small>Added: ${task.dateAdded}</small>
+            <small>Added: ${new Date(task.dateAdded).toLocaleDateString()}</small>
         </div>
     `,
 		)
@@ -149,19 +175,18 @@ async function handleNewTaskSubmission(event) {
 
 	if (!currentLocationId) return;
 
-	const titleInput = document.getElementById("task-title");
-	const descriptionInput = document.getElementById("task-description");
+	const taskInfoInput = document.getElementById("task-info");
+	const infoLines = taskInfoInput.value.split("\n");
 
 	const newTask = {
-		title: titleInput.value,
-		description: descriptionInput.value,
+		title: infoLines[0],
+		description: infoLines.slice(1).join("\n"),
 	};
 
 	const addedTask = await addTask(currentLocationId, newTask);
 	if (addedTask) {
 		// Reset form
-		titleInput.value = "";
-		descriptionInput.value = "";
+		taskInfoInput.value = "";
 
 		// Update tasks list
 		const location = await getLocationById(currentLocationId);
@@ -175,6 +200,15 @@ function showLocationSheet() {
 	sheet.style.display = "block";
 	sheet.offsetHeight; // Force reflow
 	sheet.classList.remove("hidden");
+	sheet.classList.add("picking");
+
+	// Update header text
+	const header = sheet.querySelector(".sheet-header");
+	const title = header.querySelector("h2");
+	const instruction = document.createElement("p");
+	instruction.textContent = "Tap on the map to select a location";
+	title.textContent = "Select Location";
+	header.insertBefore(instruction, header.lastElementChild);
 
 	// Enable location picking mode
 	map.getCanvas().style.cursor = "crosshair";
@@ -189,11 +223,16 @@ function showLocationSheet() {
 function hideLocationSheet() {
 	const sheet = document.getElementById("location-sheet");
 	sheet.classList.add("hidden");
+	sheet.classList.remove("picking");
 	sheet.addEventListener(
 		"transitionend",
 		() => {
 			if (sheet.classList.contains("hidden")) {
 				sheet.style.display = "none";
+				// Clean up added elements
+				const instruction = sheet.querySelector(".sheet-header p");
+				if (instruction) instruction.remove();
+				sheet.querySelector(".sheet-header h2").textContent = "Add New Location";
 			}
 		},
 		{ once: true },
@@ -217,13 +256,9 @@ async function handleLocationSubmit(event) {
 	const locationData = {
 		name: document.getElementById("location-name").value,
 		coordinates: selectedCoordinates,
-		description: document.getElementById("location-description").value,
-		care: document.getElementById("care-instructions").value,
-		seasonalTasks: {
-			spring: document.getElementById("spring-tasks").value,
-			summer: document.getElementById("summer-tasks").value,
-			fall: document.getElementById("fall-tasks").value,
-			winter: document.getElementById("winter-tasks").value,
+		info: {
+			text: document.getElementById("location-info").value,
+			images: [],
 		},
 	};
 
@@ -290,7 +325,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 	}
 
 	// Add location sheet event listeners
-	document.getElementById("add-location-btn").addEventListener("click", showLocationSheet);
 	document.getElementById("close-location-sheet").addEventListener("click", hideLocationSheet);
 	document.getElementById("cancel-location").addEventListener("click", hideLocationSheet);
 	document.getElementById("add-location-form").addEventListener("submit", handleLocationSubmit);
@@ -301,6 +335,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 			e.preventDefault();
 			selectedCoordinates = [e.lngLat.lng, e.lngLat.lat];
 			document.getElementById("selected-coordinates").textContent = `[${selectedCoordinates[0].toFixed(6)}, ${selectedCoordinates[1].toFixed(6)}]`;
+
+			// Show full form after location is selected
+			const sheet = document.getElementById("location-sheet");
+			sheet.classList.remove("picking");
+			sheet.querySelector(".sheet-header h2").textContent = "Add New Location";
+			const instruction = sheet.querySelector(".sheet-header p");
+			if (instruction) instruction.remove();
 
 			// Provide visual feedback
 			const feedback = document.createElement("div");

@@ -6,13 +6,13 @@ async function getLocations() {
             id,
             name,
             coordinates,
-            maintenance_info:maintenance_info,
+            info,
             tasks (
                 id,
-                title,
-                description,
-                completed,
-                date_added
+                info,
+                date_added,
+                date_completed,
+                tries
             )
         `);
 
@@ -23,10 +23,13 @@ async function getLocations() {
 
 	return data.map((location) => ({
 		...location,
-		maintenanceInfo: location.maintenance_info,
 		tasks: location.tasks.map((task) => ({
 			...task,
+			title: task.info.split("\n")[0],
+			description: task.info.split("\n").slice(1).join("\n"),
 			dateAdded: task.date_added,
+			dateCompleted: task.date_completed,
+			completed: !!task.date_completed,
 		})),
 	}));
 }
@@ -40,13 +43,13 @@ async function getLocationById(id) {
             id,
             name,
             coordinates,
-            maintenance_info:maintenance_info,
+            info,
             tasks (
                 id,
-                title,
-                description,
-                completed,
-                date_added
+                info,
+                date_added,
+                date_completed,
+                tries
             )
         `,
 		)
@@ -60,10 +63,13 @@ async function getLocationById(id) {
 
 	return {
 		...data,
-		maintenanceInfo: data.maintenance_info,
 		tasks: data.tasks.map((task) => ({
 			...task,
+			title: task.info.split("\n")[0],
+			description: task.info.split("\n").slice(1).join("\n"),
 			dateAdded: task.date_added,
+			dateCompleted: task.date_completed,
+			completed: !!task.date_completed,
 		})),
 	};
 }
@@ -75,10 +81,9 @@ async function addTask(locationId, task) {
 		.insert([
 			{
 				location_id: locationId,
-				title: task.title,
-				description: task.description,
-				completed: false,
+				info: `${task.title}\n${task.description}`,
 				date_added: new Date().toISOString(),
+				tries: 0,
 			},
 		])
 		.select()
@@ -98,7 +103,7 @@ async function addTask(locationId, task) {
 // Function to toggle task completion
 async function toggleTaskCompletion(locationId, taskId) {
 	// First get the current task state
-	const { data: currentTask, error: fetchError } = await supabase.from("tasks").select("completed").eq("id", taskId).single();
+	const { data: currentTask, error: fetchError } = await supabase.from("tasks").select("date_completed").eq("id", taskId).single();
 
 	if (fetchError) {
 		console.error("Error fetching task:", fetchError);
@@ -106,7 +111,13 @@ async function toggleTaskCompletion(locationId, taskId) {
 	}
 
 	// Toggle the completion state
-	const { error: updateError } = await supabase.from("tasks").update({ completed: !currentTask.completed }).eq("id", taskId);
+	const { error: updateError } = await supabase
+		.from("tasks")
+		.update({
+			date_completed: currentTask.date_completed ? null : new Date().toISOString(),
+			tries: currentTask.date_completed ? currentTask.tries : currentTask.tries + 1,
+		})
+		.eq("id", taskId);
 
 	if (updateError) {
 		console.error("Error updating task:", updateError);

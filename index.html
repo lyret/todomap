@@ -19,11 +19,6 @@
 	</head>
 	<body>
 		<div class="container">
-			<!-- Add Location Button -->
-			<button id="add-location-btn" class="floating-button" aria-label="Add Location">
-				<span class="plus-icon">+</span>
-			</button>
-
 			<!-- Map container -->
 			<div id="map"></div>
 
@@ -35,8 +30,8 @@
 				</div>
 				<div class="sidebar-content">
 					<div id="location-details">
-						<h3>Maintenance Information</h3>
-						<div id="maintenance-info"></div>
+						<h3>Location Information</h3>
+						<div id="location-info"></div>
 
 						<h3>Tasks</h3>
 						<div id="tasks-list"></div>
@@ -44,8 +39,7 @@
 						<div class="add-task-section">
 							<h3>Add New Task</h3>
 							<form id="add-task-form">
-								<input type="text" id="task-title" placeholder="Task title" required />
-								<textarea id="task-description" placeholder="Task description" required></textarea>
+								<textarea id="task-info" placeholder="Enter task info (first line will be the title)" required rows="4"></textarea>
 								<button type="submit" class="button">Add Task</button>
 							</form>
 						</div>
@@ -57,7 +51,9 @@
 		<!-- Add Location Sheet -->
 		<div id="location-sheet" class="location-sheet hidden">
 			<div class="sheet-header">
-				<h2>Add New Location</h2>
+				<div>
+					<h2>Add New Location</h2>
+				</div>
 				<button id="close-location-sheet" class="close-button" aria-label="Close">&times;</button>
 			</div>
 			<div class="sheet-content">
@@ -70,51 +66,22 @@
 					<div class="form-group">
 						<label>Coordinates</label>
 						<div class="coordinates-display">
-							<span id="selected-coordinates">Click on the map to set location</span>
+							<span id="selected-coordinates">Tap anywhere on the map to set the location</span>
 						</div>
 					</div>
 
 					<div class="form-group">
-						<label for="location-description">Description</label>
-						<textarea id="location-description" required></textarea>
-					</div>
-
-					<div class="form-group">
-						<label for="care-instructions">Care Instructions</label>
-						<textarea id="care-instructions" placeholder="Enter each instruction on a new line" required></textarea>
-					</div>
-
-					<div class="seasonal-tasks">
-						<h3>Seasonal Tasks</h3>
-
-						<div class="season-group">
-							<label for="spring-tasks">Spring</label>
-							<textarea id="spring-tasks" placeholder="Enter each task on a new line"></textarea>
-						</div>
-
-						<div class="season-group">
-							<label for="summer-tasks">Summer</label>
-							<textarea id="summer-tasks" placeholder="Enter each task on a new line"></textarea>
-						</div>
-
-						<div class="season-group">
-							<label for="fall-tasks">Fall</label>
-							<textarea id="fall-tasks" placeholder="Enter each task on a new line"></textarea>
-						</div>
-
-						<div class="season-group">
-							<label for="winter-tasks">Winter</label>
-							<textarea id="winter-tasks" placeholder="Enter each task on a new line"></textarea>
-						</div>
+						<label for="location-info">Location Information</label>
+						<textarea id="location-info" required rows="6" placeholder="Enter information about this location"></textarea>
 					</div>
 
 					<div class="form-actions">
 						<button type="submit" class="button">Save Location</button>
 						<button type="button" class="button button-secondary" id="cancel-location">Cancel</button>
 					</div>
-					<div class="safe-area-bottom"></div>
 				</form>
 			</div>
+			<div class="safe-area-bottom"></div>
 		</div>
 
 		<!-- Scripts -->
