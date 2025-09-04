@@ -267,7 +267,13 @@ async function updateMarkerColors() {
 		const marker = markers.get(location.id);
 		if (marker) {
 			const el = marker.getElement();
-			const hasActiveTasks = location.tasks.some((task) => !task.completionStatus && new Date(task.dateToStart) <= viewedDate);
+			// Only count tasks as active if they are startable AND not past their completion date
+			const hasActiveTasks = location.tasks.some((task) => {
+				if (task.completionStatus) return false;
+				const taskStartDate = new Date(task.dateToStart);
+				const taskCompletionDate = new Date(task.dateToComplete);
+				return taskStartDate <= viewedDate && taskCompletionDate >= viewedDate;
+			});
 
 			// Update marker class
 			el.className = hasActiveTasks ? "marker marker-active" : "marker marker-no-tasks";
@@ -337,22 +343,39 @@ function updateTasksList(location, currentViewedDate = new Date()) {
 	let filteredTasks = location.tasks;
 
 	if (taskFilter === "active") {
-		// Show only tasks without completion status that are active (startable)
-		filteredTasks = location.tasks.filter((task) => !task.completionStatus && new Date(task.dateToStart) <= currentViewedDate);
+		// Show only tasks without completion status that are active (startable) and not past completion date
+		// Tasks past their due date are moved to "previous" state and shown in history
+		filteredTasks = location.tasks.filter((task) => {
+			if (task.completionStatus) return false;
+			const taskStartDate = new Date(task.dateToStart);
+			const taskCompletionDate = new Date(task.dateToComplete);
+			return taskStartDate <= currentViewedDate && taskCompletionDate >= currentViewedDate;
+		});
 	} else if (taskFilter === "upcoming") {
 		// Show only tasks without completion status that are not yet startable, sorted by start date (earliest first)
 		filteredTasks = location.tasks
 			.filter((task) => !task.completionStatus && new Date(task.dateToStart) > currentViewedDate)
 			.sort((a, b) => new Date(a.dateToStart) - new Date(b.dateToStart));
 	} else if (taskFilter === "history") {
-		// Show only completed tasks, sorted by completion date (latest first)
-		filteredTasks = location.tasks.filter((task) => task.completionStatus).sort((a, b) => new Date(b.dateCompleted) - new Date(a.dateCompleted));
+		// Show completed tasks and tasks with passed completion dates (previous state), sorted by completion/due date (latest first)
+		filteredTasks = location.tasks
+			.filter((task) => {
+				if (task.completionStatus) return true;
+				// Include tasks without completion status but with passed completion dates (previous state)
+				return !task.completionStatus && new Date(task.dateToComplete) < currentViewedDate;
+			})
+			.sort((a, b) => {
+				const aDate = a.dateCompleted ? new Date(a.dateCompleted) : new Date(a.dateToComplete);
+				const bDate = b.dateCompleted ? new Date(b.dateCompleted) : new Date(b.dateToComplete);
+				return bDate - aDate;
+			});
 	}
 
 	const tasksHtml = filteredTasks
 		.map((task) => {
 			const isActive = new Date(task.dateToStart) <= currentViewedDate;
 			const hasCompletionStatus = task.completionStatus;
+			const isPassedCompletion = new Date(task.dateToComplete) < currentViewedDate;
 
 			// Determine task class based on status
 			let taskClass = "";
@@ -362,6 +385,8 @@ function updateTasksList(location, currentViewedDate = new Date()) {
 				} else {
 					taskClass = task.completionStatus; // "postponed" or "canceled"
 				}
+			} else if (isPassedCompletion) {
+				taskClass = "previous"; // Tasks past due date with unknown completion status
 			} else if (isActive) {
 				taskClass = "active";
 			} else {
@@ -382,6 +407,8 @@ function updateTasksList(location, currentViewedDate = new Date()) {
 						statusIndicator = `<span class="status-dot canceled">✕</span>`;
 						break;
 				}
+			} else if (isPassedCompletion) {
+				statusIndicator = `<span class="status-dot previous">?</span>`; // Unknown completion status
 			} else if (isActive) {
 				statusIndicator = `<span class="status-dot active">●</span>`;
 			} else {
@@ -390,10 +417,15 @@ function updateTasksList(location, currentViewedDate = new Date()) {
 
 			// Build meta information
 			let metaInfo = `Start: ${new Date(task.dateToStart).toLocaleDateString()}`;
+			if (task.dateToComplete) {
+				metaInfo += ` • Due: ${new Date(task.dateToComplete).toLocaleDateString()}`;
+			}
 			if (task.tries > 0) metaInfo += ` • ${task.tries} tries`;
 			if (hasCompletionStatus) {
 				const statusLabel = task.completionStatus.charAt(0).toUpperCase() + task.completionStatus.slice(1);
 				metaInfo += ` • ${statusLabel} ${new Date(task.dateCompleted).toLocaleDateString()}`;
+			} else if (isPassedCompletion) {
+				metaInfo += ` • Status unknown`;
 			}
 
 			return `

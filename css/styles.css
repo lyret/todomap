@@ -365,6 +365,20 @@ textarea {
 	border-color: #dc3545;
 }
 
+.task-item.previous {
+	background: #e2e3e5;
+	border-color: #d6d8db;
+}
+
+.task-item.previous .task-title {
+	color: #495057;
+}
+
+.task-item.previous:hover {
+	background: #d6d8db;
+	border-color: #6c757d;
+}
+
 .task-content {
 	display: flex;
 	align-items: flex-start;
@@ -422,6 +436,10 @@ textarea {
 
 .status-dot.canceled {
 	color: #dc3545;
+}
+
+.status-dot.previous {
+	color: #6c757d;
 }
 
 /* Location marker styles */
