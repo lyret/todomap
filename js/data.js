@@ -10,7 +10,7 @@ async function getLocations() {
             tasks (
                 id,
                 info,
-                date_added,
+                date_to_start,
                 date_completed,
                 tries
             )
@@ -27,9 +27,10 @@ async function getLocations() {
 			...task,
 			title: task.info.split("\n")[0],
 			description: task.info.split("\n").slice(1).join("\n"),
-			dateAdded: task.date_added,
+			dateToStart: task.date_to_start,
 			dateCompleted: task.date_completed,
 			completed: !!task.date_completed,
+			isActive: new Date(task.date_to_start) <= new Date(),
 		})),
 	}));
 }
@@ -47,7 +48,7 @@ async function getLocationById(id) {
             tasks (
                 id,
                 info,
-                date_added,
+                date_to_start,
                 date_completed,
                 tries
             )
@@ -67,9 +68,10 @@ async function getLocationById(id) {
 			...task,
 			title: task.info.split("\n")[0],
 			description: task.info.split("\n").slice(1).join("\n"),
-			dateAdded: task.date_added,
+			dateToStart: task.date_to_start,
 			dateCompleted: task.date_completed,
 			completed: !!task.date_completed,
+			isActive: new Date(task.date_to_start) <= new Date(),
 		})),
 	};
 }
@@ -82,7 +84,7 @@ async function addTask(locationId, task) {
 			{
 				location_id: locationId,
 				info: `${task.title}\n${task.description}`,
-				date_added: new Date().toISOString(),
+				date_to_start: task.dateToStart || new Date().toISOString(),
 				tries: 0,
 			},
 		])
@@ -96,7 +98,7 @@ async function addTask(locationId, task) {
 
 	return {
 		...data,
-		dateAdded: data.date_added,
+		dateToStart: data.date_to_start,
 	};
 }
 
@@ -159,4 +161,18 @@ async function addLocation(locationData) {
 		...data,
 		tasks: [],
 	};
+}
+
+// Function to filter active tasks based on viewed date
+function filterActiveTasks(tasks, viewedDate = new Date()) {
+	return tasks.filter((task) => new Date(task.dateToStart) <= viewedDate);
+}
+
+// Function to get location with active tasks only
+async function getLocationWithActiveTasks(id, viewedDate = new Date()) {
+	const location = await getLocationById(id);
+	if (location) {
+		location.tasks = filterActiveTasks(location.tasks, viewedDate);
+	}
+	return location;
 }

@@ -19,6 +19,13 @@
 	</head>
 	<body>
 		<div class="container">
+			<!-- Date picker for viewed date -->
+			<div id="date-picker-container" class="date-picker-container">
+				<label for="viewed-date">Viewed Date:</label>
+				<input type="date" id="viewed-date" />
+				<button id="today-btn" class="today-button">Today</button>
+			</div>
+
 			<!-- Map container -->
 			<div id="map"></div>
 
@@ -39,7 +46,11 @@
 						<div class="add-task-section">
 							<h3>Add New Task</h3>
 							<form id="add-task-form">
-								<textarea id="task-info" placeholder="Enter task info" required rows="4"></textarea>
+								<textarea id="task-info" placeholder="Enter task info (first line will be the title)" required rows="4"></textarea>
+								<div class="form-group">
+									<label for="task-start-date">Start Date:</label>
+									<input type="date" id="task-start-date" />
+								</div>
 								<button type="submit" class="button">Add Task</button>
 							</form>
 						</div>

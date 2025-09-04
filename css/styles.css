@@ -70,6 +70,49 @@ body {
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
+/* Date picker container */
+.date-picker-container {
+	display: none;
+	position: fixed;
+	top: 16px;
+	right: 16px;
+	z-index: 1000;
+	background: white;
+	padding: 12px;
+	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.date-picker-container label {
+	font-size: 14px;
+	color: #333;
+	margin: 0;
+}
+
+.date-picker-container input[type="date"] {
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	padding: 6px 8px;
+	font-size: 14px;
+}
+
+.today-button {
+	background: #6c757d;
+	color: white;
+	border: none;
+	border-radius: 4px;
+	padding: 6px 12px;
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.today-button:hover {
+	background: #5a6268;
+}
+
 .container {
 	display: flex;
 	width: 100%;
@@ -103,9 +146,7 @@ body {
 }
 
 .sidebar-header {
-	padding: 20px;
-	background: #f8f9fa;
-	border-bottom: 1px solid #e9ecef;
+	padding: 20px 20px 0px;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
@@ -137,6 +178,7 @@ body {
 
 /* Form styles */
 input[type="text"],
+input[type="date"],
 textarea {
 	width: 100%;
 	padding: 10px;
@@ -177,6 +219,16 @@ textarea {
 	background: #fff;
 }
 
+.task-item.inactive {
+	opacity: 0.6;
+	background: #f8f9fa;
+	border-color: #e9ecef;
+}
+
+.task-item.inactive .task-title {
+	color: #6c757d;
+}
+
 .task-item.completed {
 	background: #f8f9fa;
 	border-color: #e9ecef;
@@ -208,6 +260,12 @@ textarea {
 	display: flex;
 	align-items: center;
 	gap: 4px;
+	cursor: pointer;
+}
+
+.task-status.inactive {
+	background: #6c757d;
+	color: white;
 }
 
 .task-status.done {
@@ -375,10 +433,8 @@ h3 {
 }
 
 .location-info {
-	background: #f8f9fa;
-	padding: 15px;
-	border-radius: 8px;
-	margin-bottom: 20px;
+	padding: 0px;
+	margin-bottom: 16px;
 }
 
 /* Markdown rendering styles */
@@ -423,6 +479,21 @@ h3 {
 
 /* Mobile-specific styles */
 @media (max-width: 767px) {
+	.date-picker-container {
+		display: none;
+		position: fixed;
+		top: auto;
+		bottom: 16px;
+		right: 16px;
+		left: 16px;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	.date-picker-container label {
+		text-align: center;
+	}
 	.sidebar,
 	.location-sheet {
 		width: 100%;

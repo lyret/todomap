@@ -35,6 +35,7 @@ let currentLocationId = null;
 const markers = new Map(); // To store markers for easy access
 let selectedCoordinates = null; // To store coordinates for new location
 let isLocationPickingMode = false; // Track if we're picking a location
+let viewedDate = new Date(); // Current viewed date for filtering tasks
 
 // Initialize map and add markers
 function initializeMap() {
@@ -112,7 +113,7 @@ async function showLocationDetails(locationId) {
 	document.getElementById("location-info").innerHTML = locationInfoHtml;
 
 	// Update tasks list
-	updateTasksList(location);
+	updateTasksList(location, viewedDate);
 
 	// Show sidebar with animation
 	const sidebar = document.getElementById("sidebar");
@@ -123,23 +124,33 @@ async function showLocationDetails(locationId) {
 }
 
 // Update tasks list
-function updateTasksList(location) {
+function updateTasksList(location, currentViewedDate = new Date()) {
 	const tasksHtml = location.tasks
-		.map(
-			(task) => `
-        <div class="task-item ${task.completed ? "completed" : ""}" data-task-id="${task.id}">
+		.map((task) => {
+			const isActive = new Date(task.dateToStart) <= currentViewedDate;
+			const taskClass = task.completed ? "completed" : isActive ? "" : "inactive";
+			const statusClass = task.completed ? "done" : isActive ? "" : "inactive";
+			const statusText = task.completed
+				? new Date(task.dateCompleted).toLocaleDateString()
+				: isActive
+					? "Pending"
+					: `Starts ${new Date(task.dateToStart).toLocaleDateString()}`;
+
+			return `
+        <div class="task-item ${taskClass}" data-task-id="${task.id}">
             <div class="task-header">
                 <span class="task-title">${task.title}</span>
-                <span class="task-status ${task.completed ? "done" : ""}"
+                <span class="task-status ${statusClass}"
                       onclick="toggleTask('${task.id}')">
-                    ${task.completed ? "Done" : "Pending"}
-                </span>""
+                    ${statusText}
+                    ${task.tries > 0 ? `<span class="tries">↻${task.tries}</span>` : ""}
+                </span>
             </div>
             <p>${task.description}</p>
-            <small>Added: ${task.dateAdded}</small>
+            <small>Start: ${new Date(task.dateToStart).toLocaleDateString()}</small>
         </div>
-    `,
-		)
+    `;
+		})
 		.join("");
 
 	document.getElementById("tasks-list").innerHTML = tasksHtml;
@@ -149,7 +160,7 @@ function updateTasksList(location) {
 async function toggleTask(taskId) {
 	if (currentLocationId && (await toggleTaskCompletion(currentLocationId, taskId))) {
 		const location = await getLocationById(currentLocationId);
-		updateTasksList(location);
+		updateTasksList(location, viewedDate);
 	}
 }
 
@@ -159,23 +170,25 @@ async function handleNewTaskSubmission(event) {
 
 	if (!currentLocationId) return;
 
-	const titleInput = document.getElementById("task-title");
-	const descriptionInput = document.getElementById("task-description");
+	const taskInfoInput = document.getElementById("task-info");
+	const taskStartDateInput = document.getElementById("task-start-date");
+	const infoLines = taskInfoInput.value.split("\n");
 
 	const newTask = {
-		title: titleInput.value,
-		description: descriptionInput.value,
+		title: infoLines[0],
+		description: infoLines.slice(1).join("\n"),
+		dateToStart: taskStartDateInput.value ? new Date(taskStartDateInput.value).toISOString() : new Date().toISOString(),
 	};
 
 	const addedTask = await addTask(currentLocationId, newTask);
 	if (addedTask) {
 		// Reset form
-		titleInput.value = "";
-		descriptionInput.value = "";
+		taskInfoInput.value = "";
+		taskStartDateInput.value = new Date().toISOString().split("T")[0];
 
 		// Update tasks list
 		const location = await getLocationById(currentLocationId);
-		updateTasksList(location);
+		updateTasksList(location, viewedDate);
 	}
 }
 
@@ -278,6 +291,33 @@ document.addEventListener("DOMContentLoaded", async () => {
 		// Initialize map
 		initializeMap();
 
+		// Initialize date picker
+		const dateInput = document.getElementById("viewed-date");
+		const todayBtn = document.getElementById("today-btn");
+
+		// Set initial date to today
+		dateInput.value = new Date().toISOString().split("T")[0];
+
+		// Handle date change
+		dateInput.addEventListener("change", (e) => {
+			viewedDate = new Date(e.target.value);
+			// Refresh current location if open
+			if (currentLocationId) {
+				showLocationDetails(currentLocationId);
+			}
+		});
+
+		// Handle today button
+		todayBtn.addEventListener("click", () => {
+			const today = new Date();
+			viewedDate = today;
+			dateInput.value = today.toISOString().split("T")[0];
+			// Refresh current location if open
+			if (currentLocationId) {
+				showLocationDetails(currentLocationId);
+			}
+		});
+
 		// Add event listener for close button
 		document.getElementById("close-sidebar").addEventListener("click", () => {
 			const sidebar = document.getElementById("sidebar");
@@ -302,6 +342,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 		const sidebar = document.getElementById("sidebar");
 		sidebar.style.display = "none";
 		sidebar.classList.add("hidden");
+
+		// Set default start date for new tasks to today
+		document.getElementById("task-start-date").value = new Date().toISOString().split("T")[0];
 	} catch (error) {
 		console.error("Error initializing application:", error);
 	}
