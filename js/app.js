@@ -183,6 +183,7 @@ let map = new maplibregl.Map({
 	zoom: 18, // Increased zoom for better satellite detail
 	maxZoom: 20,
 	minZoom: 14,
+	renderWorldCopies: false, // Prevent coordinate wrapping
 });
 
 // Global variables
@@ -240,6 +241,8 @@ function initializeMap() {
 					element: el,
 					clickTolerance: 3,
 					draggable: false,
+					rotationAlignment: "map",
+					pitchAlignment: "map",
 				})
 					.setLngLat(location.coordinates)
 					.addTo(map);
@@ -585,6 +588,8 @@ async function handleLocationSubmit(event) {
 			element: el,
 			clickTolerance: 3,
 			draggable: false,
+			rotationAlignment: "map",
+			pitchAlignment: "map",
 		})
 			.setLngLat(newLocation.coordinates)
 			.addTo(map);
@@ -1153,8 +1158,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 	map.on("click", (e) => {
 		if (isLocationPickingMode) {
 			e.preventDefault();
-			selectedCoordinates = [e.lngLat.lng, e.lngLat.lat];
-			document.getElementById("selected-coordinates").textContent = `[${selectedCoordinates[0].toFixed(6)}, ${selectedCoordinates[1].toFixed(6)}]`;
+			// Get precise coordinates from the click event
+			const clickedPoint = e.lngLat;
+			selectedCoordinates = [Number(clickedPoint.lng.toFixed(14)), Number(clickedPoint.lat.toFixed(14))];
+			// Format display text with less precision
+			const displayLng = clickedPoint.lng.toFixed(6);
+			const displayLat = clickedPoint.lat.toFixed(6);
+			document.getElementById("selected-coordinates").textContent = `[${displayLng}, ${displayLat}]`;
 
 			// Show full form after location is selected
 			const sheet = document.getElementById("location-sheet");
